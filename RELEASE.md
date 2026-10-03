@@ -1,10 +1,10 @@
-# PROPERTY SCE MASTER V4.1.1
+# PROPERTY SCE MASTER V4.1.3
 
-Backend-connected release patch.
+Property management patch.
 
-Fixes:
-- Synchronizes the demo admin password hash from DEMO_ADMIN_PASSWORD on API startup.
-- Keeps PostgreSQL persistence and API health check.
-- Frontend displays V4.1 and uses the Render API URL.
-
-Deploy the API first, then the static web service.
+Adds:
+- Edit Property
+- Delete Property with confirmation
+- Duplicate protection by name + location
+- PostgreSQL PATCH/DELETE routes
+- Frontend edit form reuse
