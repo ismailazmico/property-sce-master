@@ -2,7 +2,7 @@ services:
   - type: web
     name: property-sce-master-api
     runtime: docker
-    rootDir: apps/api
+    rootDir: apps/web
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
