@@ -1,71 +1,90 @@
 {
-  "version": "4.0.0-rc1",
+  "name": "PROPERTY_SCE_MASTER_V4_1_BACKEND_CONNECTED",
   "files": [
     {
       "path": ".env.example",
-      "bytes": 357,
-      "sha256": "a4b4305e6ebedc4a167356cad321d3db7c722669e79edeb7f0c7f0ba2b82a5ec"
+      "sha256": "a4b4305e6ebedc4a167356cad321d3db7c722669e79edeb7f0c7f0ba2b82a5ec",
+      "bytes": 357
+    },
+    {
+      "path": "DEPLOYMENT_STATUS.txt",
+      "sha256": "575bc2b183099f50b5ca4a4ac9066e84ec9f6bb58ad1a9e1b3d463400a4cc4f3",
+      "bytes": 264
     },
     {
       "path": "README.md",
-      "bytes": 851,
-      "sha256": "17f3b521fed1ebca9ede7d38949550bf6d00bb6faf09f0c066848977c08fe3f1"
+      "sha256": "17f3b521fed1ebca9ede7d38949550bf6d00bb6faf09f0c066848977c08fe3f1",
+      "bytes": 851
     },
     {
       "path": "RELEASE.md",
-      "bytes": 1286,
-      "sha256": "4a390149435ba2e98b30ad341d4fe08d97e9acc4b2c66bd39e1b136c435b65f8"
+      "sha256": "b467bf2427392f812cbd238b76c4e29ac2387bc7a7dc65d459df72c247e2e72b",
+      "bytes": 420
     },
     {
       "path": "apps/api/Dockerfile",
-      "bytes": 139,
-      "sha256": "e7a2e5360853d753d0a326cc11152b16c9df01ab1cb54754aec60344705bb076"
+      "sha256": "c7ea5ac37a1e6efd0ac6f73ee5ccd1b42d51f0f34a2a7ba7d6a85637b60fcf23",
+      "bytes": 174
+    },
+    {
+      "path": "apps/api/migration.sql",
+      "sha256": "30b3199f600d9e50ff29b1d067c68d814836ebcf4d45d56e3b25a06aabd1e9b6",
+      "bytes": 3500
     },
     {
       "path": "apps/api/package.json",
-      "bytes": 372,
-      "sha256": "402686ec46cba456f30c60f2cf09355cefd2eccdc0d637f0efdf46cb1959072e"
+      "sha256": "402686ec46cba456f30c60f2cf09355cefd2eccdc0d637f0efdf46cb1959072e",
+      "bytes": 372
     },
     {
       "path": "apps/api/src/server.mjs",
-      "bytes": 7237,
-      "sha256": "20866242a7632ada9042c783914a163f8ab5645169117e765541f584a03912e2"
+      "sha256": "2f5ab174ef8f23b3af203e1db4ae626a68b3117f58566c6dfd161a3da0d989c7",
+      "bytes": 10508
     },
     {
       "path": "apps/web/index.html",
-      "bytes": 12845,
-      "sha256": "562e7921e0432888a344ded5e0e2ee16bc30db7a527b792118e53aa2442a5ead"
+      "sha256": "aa97bec585a2d93af1e1ff3775e403c1919b241afe04c2eb4b6809a0e78fd9af",
+      "bytes": 14190
     },
     {
       "path": "database/migrations/001_init.sql",
-      "bytes": 3500,
-      "sha256": "30b3199f600d9e50ff29b1d067c68d814836ebcf4d45d56e3b25a06aabd1e9b6"
+      "sha256": "30b3199f600d9e50ff29b1d067c68d814836ebcf4d45d56e3b25a06aabd1e9b6",
+      "bytes": 3500
     },
     {
       "path": "docs/ARCHITECTURE.md",
-      "bytes": 546,
-      "sha256": "a28a26cf90242457f884fda4d861ba89c9bf3686044bd29239bfa793c3869a9e"
+      "sha256": "a28a26cf90242457f884fda4d861ba89c9bf3686044bd29239bfa793c3869a9e",
+      "bytes": 546
     },
     {
       "path": "docs/PRODUCTION_CHECKLIST.md",
-      "bytes": 813,
-      "sha256": "5defac4ba87a79f4684adf562e0d428b77e821a4075482bd8f3ceba8a62bd54d"
+      "sha256": "5defac4ba87a79f4684adf562e0d428b77e821a4075482bd8f3ceba8a62bd54d",
+      "bytes": 813
+    },
+    {
+      "path": "index.html",
+      "sha256": "aa97bec585a2d93af1e1ff3775e403c1919b241afe04c2eb4b6809a0e78fd9af",
+      "bytes": 14190
     },
     {
       "path": "infra/README.md",
-      "bytes": 413,
-      "sha256": "33e69f65d7ccc626a8767fbab356041e473617ed86657a0c0eedb5ccb55fa3be"
+      "sha256": "33e69f65d7ccc626a8767fbab356041e473617ed86657a0c0eedb5ccb55fa3be",
+      "bytes": 413
     },
     {
       "path": "infra/docker-compose.yml",
-      "bytes": 489,
-      "sha256": "00bf51693ea70bef230810fe1740ca6588ecd5ee9df4feb3778ee424d5d34013"
+      "sha256": "00bf51693ea70bef230810fe1740ca6588ecd5ee9df4feb3778ee424d5d34013",
+      "bytes": 489
     },
     {
       "path": "package.json",
-      "bytes": 184,
-      "sha256": "59fa11efbac2d09e52d917ad40d2689bb5c2269494c5b9a9be3e731a994656ad"
+      "sha256": "59fa11efbac2d09e52d917ad40d2689bb5c2269494c5b9a9be3e731a994656ad",
+      "bytes": 184
+    },
+    {
+      "path": "render.yaml",
+      "sha256": "b1fab8d8f3c2a37e10fef5f8093906b7c17ab97cb26f7e964baabbbc92d34575",
+      "bytes": 751
     }
-  ],
-  "missing": []
+  ]
 }

@@ -1,2 +1,1 @@
-READY FOR HOSTING DEPLOYMENT
-Public deployment has NOT been performed from this environment.
+V4.1 BACKEND CONNECTED package ready. Frontend is API-connected with local fallback; API auto-initializes PostgreSQL schema and seeds first admin/demo property/lead. Full production AI/media/WhatsApp/Meta integrations still require real providers and credentials.
