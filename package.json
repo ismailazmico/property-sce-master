@@ -1,11 +1,18 @@
 {
-  "name": "property-sce-master",
-  "private": true,
+  "name": "property-sce-master-api",
   "version": "4.0.0",
-  "workspaces": [
-    "apps/api"
-  ],
+  "type": "module",
   "scripts": {
-    "api:dev": "npm --workspace apps/api run dev"
+    "dev": "node --watch src/server.mjs",
+    "start": "node src/server.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "cors": "^2.8.5",
+    "helmet": "^8.1.0",
+    "zod": "^3.25.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^3.0.2",
+    "pg": "^8.16.0"
   }
 }
