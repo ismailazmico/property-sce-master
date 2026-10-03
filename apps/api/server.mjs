@@ -1,0 +1,92 @@
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
+import pg from "pg";
+
+const app=express();
+app.use(helmet());
+const allowedOrigin=process.env.WEB_ORIGIN||true;
+app.use(cors({origin:allowedOrigin,credentials:false}));
+app.use(express.json({limit:"2mb"}));
+const PORT=process.env.PORT||4000;
+const JWT_SECRET=process.env.JWT_SECRET||"CHANGE_THIS_IN_PRODUCTION";
+const pool=process.env.DATABASE_URL?new pg.Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_URL.includes("render.com")?{rejectUnauthorized:false}:undefined}):null;
+const demo={properties:[],media:[],leads:[],aiJobs:[],renders:[]};
+const id=()=>crypto.randomUUID();
+
+async function migrateAndSeed(){
+  if(!pool)return;
+  const sql=await fs.readFile(path.resolve(process.cwd(),"migration.sql"),"utf8").catch(()=>null);
+  if(sql) await pool.query(sql);
+  const email=process.env.DEMO_ADMIN_EMAIL||"admin@sce.local";
+  const password=process.env.DEMO_ADMIN_PASSWORD||"demo123";
+  let ws=(await pool.query("select id from workspaces where name=$1 limit 1",["AZM1 Property Workspace"])).rows[0];
+  if(!ws){ws=(await pool.query("insert into workspaces(name,plan) values($1,$2) returning id",["AZM1 Property Workspace","starter"])).rows[0];}
+  let user=(await pool.query("select id,workspace_id,role,email from users where email=$1",[email])).rows[0];
+  if(!user){
+    const hash=await bcrypt.hash(password,10);
+    user=(await pool.query("insert into users(workspace_id,full_name,email,password_hash,role) values($1,$2,$3,$4,$5) returning id,workspace_id,role,email",[ws.id,"Ismail bin Ibrahim",email,hash,"admin"])).rows[0];
+  }
+  const count=(await pool.query("select count(*)::int as n from properties where workspace_id=$1",[ws.id])).rows[0].n;
+  if(count===0){
+    const p=(await pool.query(`insert into properties(workspace_id,owner_id,name,location,price,tenure,bedrooms,bathrooms,built_up,lot_type,verified_usps) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) returning id`,[ws.id,user.id,"Double Storey Terrace","Pasir Gudang Johor",850000,"Leasehold",4,3,"2,024 sqft","24 x 60",JSON.stringify(["4 bedrooms","3 bathrooms","2,024 sqft","Leasehold"])] )).rows[0];
+    const leadCount=(await pool.query("select count(*)::int as n from leads where workspace_id=$1",[ws.id])).rows[0].n;
+    if(leadCount===0) await pool.query("insert into leads(workspace_id,property_id,owner_id,name,phone,stage,source) values($1,$2,$3,$4,$5,$6,$7)",[ws.id,p.id,user.id,"Ahmad","012-3456789","new","Demo"]);
+  }
+}
+
+function auth(req,res,next){
+  const h=req.headers.authorization||"";
+  if(!h.startsWith("Bearer "))return res.status(401).json({error:"Unauthorized"});
+  try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
+}
+
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.1",db});});
+
+app.post("/api/auth/login",async(req,res)=>{
+  const {email,password}=req.body||{};
+  if(pool){
+    const r=await pool.query("select id,workspace_id,full_name,email,password_hash,role,status from users where email=$1 limit 1",[email]);
+    const u=r.rows[0];
+    if(u&&u.status==="active"&&u.password_hash&&await bcrypt.compare(password,u.password_hash)){
+      const token=jwt.sign({sub:u.id,workspace_id:u.workspace_id,role:u.role,email:u.email},JWT_SECRET,{expiresIn:"8h"});
+      return res.json({token,user:{id:u.id,name:u.full_name,email:u.email,role:u.role,workspace_id:u.workspace_id}});
+    }
+  }
+  if(!pool&&email===(process.env.DEMO_ADMIN_EMAIL||"admin@sce.local")&&password===(process.env.DEMO_ADMIN_PASSWORD||"demo123")){
+    const token=jwt.sign({sub:"demo-admin",workspace_id:"demo-workspace",role:"admin",email},JWT_SECRET,{expiresIn:"8h"});
+    return res.json({token,user:{id:"demo-admin",name:"Ismail bin Ibrahim",email,role:"admin",workspace_id:"demo-workspace"}});
+  }
+  res.status(401).json({error:"Invalid credentials"});
+});
+
+const propertySchema=z.object({name:z.string().min(1),location:z.string().optional(),price:z.number().nullable().optional(),tenure:z.string().optional(),bedrooms:z.number().int().nonnegative().optional(),bathrooms:z.number().int().nonnegative().optional(),built_up:z.string().optional(),lot_type:z.string().optional(),verified_usps:z.array(z.string()).default([])});
+app.get("/api/properties",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from properties where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.properties.filter(x=>x.workspace_id===req.user.workspace_id));});
+app.post("/api/properties",auth,async(req,res)=>{const parsed=propertySchema.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:parsed.error.flatten()});const p={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,...parsed.data};if(pool){const r=await pool.query(`insert into properties(id,workspace_id,owner_id,name,location,price,tenure,bedrooms,bathrooms,built_up,lot_type,verified_usps) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning *`,[p.id,p.workspace_id,p.owner_id,p.name,p.location,p.price,p.tenure,p.bedrooms,p.bathrooms,p.built_up,p.lot_type,JSON.stringify(p.verified_usps)]);return res.status(201).json(r.rows[0]);}demo.properties.unshift(p);res.status(201).json(p);});
+
+app.get("/api/leads",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from leads where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.leads.filter(x=>x.workspace_id===req.user.workspace_id));});
+app.post("/api/leads",auth,async(req,res)=>{const l={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,stage:"new",...req.body};if(pool){const r=await pool.query(`insert into leads(id,workspace_id,property_id,owner_id,name,phone,email,stage,source,notes) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,[l.id,l.workspace_id,l.property_id,l.owner_id,l.name,l.phone,l.email,l.stage,l.source,l.notes]);return res.status(201).json(r.rows[0]);}demo.leads.unshift(l);res.status(201).json(l);});
+app.patch("/api/leads/:id",auth,async(req,res)=>{if(pool){const r=await pool.query("update leads set stage=coalesce($1,stage),notes=coalesce($2,notes),updated_at=now() where id=$3 and workspace_id=$4 returning *",[req.body.stage,req.body.notes,req.params.id,req.user.workspace_id]);return r.rowCount?res.json(r.rows[0]):res.sendStatus(404);}const l=demo.leads.find(x=>x.id===req.params.id&&x.workspace_id===req.user.workspace_id);if(!l)return res.sendStatus(404);Object.assign(l,req.body);res.json(l);});
+
+app.get("/api/media",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from media where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.media.filter(x=>x.workspace_id===req.user.workspace_id));});
+app.post("/api/media/complete",auth,async(req,res)=>{const m={id:id(),workspace_id:req.user.workspace_id,...req.body};if(pool){const r=await pool.query(`insert into media(id,workspace_id,property_id,storage_key,original_name,mime_type,size_bytes,tag) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`,[m.id,m.workspace_id,m.property_id,m.storage_key,m.original_name,m.mime_type,m.size_bytes,m.tag]);return res.status(201).json(r.rows[0]);}demo.media.unshift(m);res.status(201).json(m);});
+
+function factLockedOutput(property,funnel,audience,angle){
+  const facts=(property.verified_usps||[]).filter(Boolean);
+  const factLine=facts.length?facts.join(" • "):"Maklumat berdasarkan Property Database.";
+  const headline=funnel==="Cold"?`Kenali ${property.name} di ${property.location||""}`:funnel==="Warm"?`Semak fakta ${property.name} sebelum buat keputusan`: `Jom semak viewing ${property.name}`;
+  const primary=`${property.bedrooms??"-"} bilik • ${property.bathrooms??"-"} bilik air • ${property.built_up||"-"}.\n${factLine}.\nHarga: ${property.price!=null?`RM ${Number(property.price).toLocaleString("en-MY")}`:"Hubungi untuk harga"}.`;
+  return {language:"ms-MY",headline,hook:`${headline}.`,primary_text:primary,cta:"WhatsApp untuk detail & viewing",whatsapp:`Assalamualaikum, saya berminat dengan ${property.name}. Boleh saya dapatkan detail dan info viewing?`,video_30s:{scene_1:"Hook property",scene_2:"Paparkan fakta yang disahkan",scene_3:"CTA WhatsApp"},funnel,audience,angle,fact_check:{status:"PASS",used_verified_facts:facts,generated_claims:[]}};
+}
+app.post("/api/ai/jobs",auth,async(req,res)=>{const {property,funnel="Cold",audience="Pembeli rumah",angle="Property Showcase"}=req.body||{};if(!property?.name)return res.status(400).json({error:"property required"});const output=factLockedOutput(property,funnel,audience,angle);const job={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,property_id:property.id||null,status:"completed",output};if(pool){const r=await pool.query(`insert into ai_jobs(id,workspace_id,owner_id,property_id,funnel_stage,request,response,provider,status) values($1,$2,$3,$4,$5,$6,$7,$8,$9) returning *`,[job.id,job.workspace_id,job.owner_id,job.property_id,funnel,JSON.stringify(req.body),JSON.stringify(output),process.env.AI_PROVIDER||"demo","completed"]);return res.status(201).json(r.rows[0]);}demo.aiJobs.unshift(job);res.status(201).json(job);});
+
+app.get("/api/ai/jobs",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from ai_jobs where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.aiJobs.filter(x=>x.workspace_id===req.user.workspace_id));});
+app.post("/api/creative/renders",auth,async(req,res)=>{const render={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,status:"draft",...req.body};if(pool){const r=await pool.query(`insert into creative_renders(id,workspace_id,owner_id,property_id,format,brief,status) values($1,$2,$3,$4,$5,$6,$7) returning *`,[render.id,render.workspace_id,render.owner_id,render.property_id,render.format,JSON.stringify(render.brief||{}),"draft"]);return res.status(201).json(r.rows[0]);}demo.renders.unshift(render);res.status(201).json(render);});
+
+migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT}`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
