@@ -89,6 +89,9 @@ app.patch("/api/properties/:id",auth,async(req,res)=>{
 });
 app.delete("/api/properties/:id",auth,async(req,res)=>{
   const idv=req.params.id;
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idv)){
+    return res.status(400).json({error:"ID property tidak sah. Sila refresh data property dan cuba lagi."});
+  }
   if(pool){
     const r=await pool.query("delete from properties where id=$1 and workspace_id=$2 returning id",[idv,req.user.workspace_id]);
     if(!r.rowCount)return res.status(404).json({error:"Property tidak dijumpai"});
