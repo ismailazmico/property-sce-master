@@ -3,7 +3,6 @@ services:
     name: property-sce-master-api
     runtime: docker
     rootDir: apps/api
-    plan: free
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -23,10 +22,8 @@ services:
     rootDir: apps/web
     buildCommand: ""
     staticPublishPath: .
-    plan: free
 
 databases:
   - name: property-sce-master-db
-    plan: free
     databaseName: sce_master
     user: sce
