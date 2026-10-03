@@ -70,7 +70,34 @@ app.post("/api/auth/login",async(req,res)=>{
 
 const propertySchema=z.object({name:z.string().min(1),location:z.string().optional(),price:z.number().nullable().optional(),tenure:z.string().optional(),bedrooms:z.number().int().nonnegative().optional(),bathrooms:z.number().int().nonnegative().optional(),built_up:z.string().optional(),lot_type:z.string().optional(),verified_usps:z.array(z.string()).default([])});
 app.get("/api/properties",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from properties where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.properties.filter(x=>x.workspace_id===req.user.workspace_id));});
-app.post("/api/properties",auth,async(req,res)=>{const parsed=propertySchema.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:parsed.error.flatten()});const p={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,...parsed.data};if(pool){const r=await pool.query(`insert into properties(id,workspace_id,owner_id,name,location,price,tenure,bedrooms,bathrooms,built_up,lot_type,verified_usps) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning *`,[p.id,p.workspace_id,p.owner_id,p.name,p.location,p.price,p.tenure,p.bedrooms,p.bathrooms,p.built_up,p.lot_type,JSON.stringify(p.verified_usps)]);return res.status(201).json(r.rows[0]);}demo.properties.unshift(p);res.status(201).json(p);});
+app.post("/api/properties",auth,async(req,res)=>{const parsed=propertySchema.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:parsed.error.flatten()});if(pool){const dup=await pool.query("select id from properties where workspace_id=$1 and lower(name)=lower($2) and lower(coalesce(location,''))=lower(coalesce($3,'')) limit 1",[req.user.workspace_id,parsed.data.name,parsed.data.location||""]);if(dup.rowCount)return res.status(409).json({error:"Property dengan nama dan lokasi yang sama sudah wujud",id:dup.rows[0].id});}
+const p={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,...parsed.data};if(pool){const r=await pool.query(`insert into properties(id,workspace_id,owner_id,name,location,price,tenure,bedrooms,bathrooms,built_up,lot_type,verified_usps) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning *`,[p.id,p.workspace_id,p.owner_id,p.name,p.location,p.price,p.tenure,p.bedrooms,p.bathrooms,p.built_up,p.lot_type,JSON.stringify(p.verified_usps)]);return res.status(201).json(r.rows[0]);}demo.properties.unshift(p);res.status(201).json(p);});
+app.patch("/api/properties/:id",auth,async(req,res)=>{
+  const parsed=propertySchema.safeParse(req.body);
+  if(!parsed.success)return res.status(400).json({error:parsed.error.flatten()});
+  const idv=req.params.id;
+  if(pool){
+    const dup=await pool.query("select id from properties where workspace_id=$1 and lower(name)=lower($2) and lower(coalesce(location,''))=lower(coalesce($3,'')) and id<>$4 limit 1",[req.user.workspace_id,parsed.data.name,parsed.data.location||"",idv]);
+    if(dup.rowCount)return res.status(409).json({error:"Property dengan nama dan lokasi yang sama sudah wujud",id:dup.rows[0].id});
+    const r=await pool.query(`update properties set name=$1,location=$2,price=$3,tenure=$4,bedrooms=$5,bathrooms=$6,built_up=$7,lot_type=$8,verified_usps=$9,updated_at=now() where id=$10 and workspace_id=$11 returning *`,[parsed.data.name,parsed.data.location||"",parsed.data.price??null,parsed.data.tenure||"",parsed.data.bedrooms??0,parsed.data.bathrooms??0,parsed.data.built_up||"",parsed.data.lot_type||"",JSON.stringify(parsed.data.verified_usps||[]),idv,req.user.workspace_id]);
+    if(!r.rowCount)return res.status(404).json({error:"Property tidak dijumpai"});
+    return res.json(r.rows[0]);
+  }
+  const p=demo.properties.find(x=>x.id===idv&&x.workspace_id===req.user.workspace_id);
+  if(!p)return res.status(404).json({error:"Property tidak dijumpai"});
+  Object.assign(p,parsed.data);return res.json(p);
+});
+app.delete("/api/properties/:id",auth,async(req,res)=>{
+  const idv=req.params.id;
+  if(pool){
+    const r=await pool.query("delete from properties where id=$1 and workspace_id=$2 returning id",[idv,req.user.workspace_id]);
+    if(!r.rowCount)return res.status(404).json({error:"Property tidak dijumpai"});
+    return res.json({ok:true,id:idv});
+  }
+  const i=demo.properties.findIndex(x=>x.id===idv&&x.workspace_id===req.user.workspace_id);
+  if(i<0)return res.status(404).json({error:"Property tidak dijumpai"});
+  demo.properties.splice(i,1);return res.json({ok:true,id:idv});
+});
 
 app.get("/api/leads",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from leads where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.leads.filter(x=>x.workspace_id===req.user.workspace_id));});
 app.post("/api/leads",auth,async(req,res)=>{const l={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,stage:"new",...req.body};if(pool){const r=await pool.query(`insert into leads(id,workspace_id,property_id,owner_id,name,phone,email,stage,source,notes) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) returning *`,[l.id,l.workspace_id,l.property_id,l.owner_id,l.name,l.phone,l.email,l.stage,l.source,l.notes]);return res.status(201).json(r.rows[0]);}demo.leads.unshift(l);res.status(201).json(l);});
