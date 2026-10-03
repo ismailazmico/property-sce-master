@@ -1,10 +1,10 @@
-# PROPERTY SCE MASTER V4.1 — BACKEND CONNECTED
+# PROPERTY SCE MASTER V4.1.1
 
-This release connects the web frontend to the API and PostgreSQL.
+Backend-connected release patch.
 
-## Initial login
-Email: admin@sce.local
-Password: demo123 (set DEMO_ADMIN_PASSWORD in Render for a different initial password)
+Fixes:
+- Synchronizes the demo admin password hash from DEMO_ADMIN_PASSWORD on API startup.
+- Keeps PostgreSQL persistence and API health check.
+- Frontend displays V4.1 and uses the Render API URL.
 
-## Important
-Change the demo password and JWT secret before real customer use. AI provider is still `demo`; media storage is metadata-only until object storage is configured.
+Deploy the API first, then the static web service.

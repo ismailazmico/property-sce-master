@@ -1,0 +1,11 @@
+{
+  "name": "property-sce-master",
+  "private": true,
+  "version": "4.0.0",
+  "workspaces": [
+    "apps/api"
+  ],
+  "scripts": {
+    "api:dev": "npm --workspace apps/api run dev"
+  }
+}
