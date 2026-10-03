@@ -8,17 +8,30 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import pg from "pg";
+import multer from "multer";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const app=express();
 app.use(helmet());
 const allowedOrigin=process.env.WEB_ORIGIN||true;
 app.use(cors({origin:allowedOrigin,credentials:false}));
 app.use(express.json({limit:"2mb"}));
+const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024}});
 const PORT=process.env.PORT||4000;
 const JWT_SECRET=process.env.JWT_SECRET||"CHANGE_THIS_IN_PRODUCTION";
 const pool=process.env.DATABASE_URL?new pg.Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_URL.includes("render.com")?{rejectUnauthorized:false}:undefined}):null;
 const demo={properties:[],media:[],leads:[],aiJobs:[],renders:[]};
 const id=()=>crypto.randomUUID();
+
+const r2Config={
+  accountId:process.env.R2_ACCOUNT_ID||"",
+  accessKeyId:process.env.R2_ACCESS_KEY_ID||"",
+  secretAccessKey:process.env.R2_SECRET_ACCESS_KEY||"",
+  bucket:process.env.R2_BUCKET_NAME||""
+};
+const r2Ready=()=>Boolean(r2Config.accountId&&r2Config.accessKeyId&&r2Config.secretAccessKey&&r2Config.bucket);
+const r2Client=r2Ready()?new S3Client({region:"auto",endpoint:`https://${r2Config.accountId}.r2.cloudflarestorage.com`,credentials:{accessKeyId:r2Config.accessKeyId,secretAccessKey:r2Config.secretAccessKey}}):null;
+const safeFileName=(name)=>String(name||"file").replace(/[^a-zA-Z0-9._-]+/g,"-").replace(/^-+|-+$/g,"")||"file";
 
 async function migrateAndSeed(){
   if(!pool)return;
@@ -49,7 +62,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.1",db});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.1",db,r2:r2Ready()});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -108,6 +121,28 @@ app.patch("/api/leads/:id",auth,async(req,res)=>{if(pool){const r=await pool.que
 
 app.get("/api/media",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from media where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.media.filter(x=>x.workspace_id===req.user.workspace_id));});
 app.post("/api/media/complete",auth,async(req,res)=>{const m={id:id(),workspace_id:req.user.workspace_id,...req.body};if(pool){const r=await pool.query(`insert into media(id,workspace_id,property_id,storage_key,original_name,mime_type,size_bytes,tag) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`,[m.id,m.workspace_id,m.property_id,m.storage_key,m.original_name,m.mime_type,m.size_bytes,m.tag]);return res.status(201).json(r.rows[0]);}demo.media.unshift(m);res.status(201).json(m);});
+
+app.post("/api/media/upload",auth,upload.single("file"),async(req,res)=>{
+  if(!r2Ready()) return res.status(503).json({error:"R2 object storage belum dikonfigurasi di API"});
+  if(!req.file) return res.status(400).json({error:"Sila pilih fail gambar"});
+  if(!String(req.file.mimetype||"").startsWith("image/")) return res.status(400).json({error:"Hanya fail gambar dibenarkan"});
+  const mediaId=id();
+  const key=`media/${req.user.workspace_id}/${mediaId}-${safeFileName(req.file.originalname)}`;
+  try{
+    await r2Client.send(new PutObjectCommand({Bucket:r2Config.bucket,Key:key,Body:req.file.buffer,ContentType:req.file.mimetype,Metadata:{originalname:String(req.file.originalname||"")}}));
+    const m={id:mediaId,workspace_id:req.user.workspace_id,property_id:req.body.property_id||null,storage_key:key,original_name:req.file.originalname,mime_type:req.file.mimetype,size_bytes:req.file.size,tag:req.body.tag||"hero"};
+    if(pool){
+      const r=await pool.query(`insert into media(id,workspace_id,property_id,storage_key,original_name,mime_type,size_bytes,tag) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`,[m.id,m.workspace_id,m.property_id,m.storage_key,m.original_name,m.mime_type,m.size_bytes,m.tag]);
+      return res.status(201).json(r.rows[0]);
+    }
+    demo.media.unshift(m);
+    return res.status(201).json(m);
+  }catch(err){
+    try{await r2Client.send(new DeleteObjectCommand({Bucket:r2Config.bucket,Key:key}));}catch{}
+    console.error("R2 upload failed",err);
+    return res.status(502).json({error:"Upload ke Cloudflare R2 gagal",detail:err?.message||"Unknown error"});
+  }
+});
 
 function factLockedOutput(property,funnel,audience,angle){
   const facts=(property.verified_usps||[]).filter(Boolean);
