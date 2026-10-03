@@ -29,9 +29,11 @@ async function migrateAndSeed(){
   let ws=(await pool.query("select id from workspaces where name=$1 limit 1",["AZM1 Property Workspace"])).rows[0];
   if(!ws){ws=(await pool.query("insert into workspaces(name,plan) values($1,$2) returning id",["AZM1 Property Workspace","starter"])).rows[0];}
   let user=(await pool.query("select id,workspace_id,role,email from users where email=$1",[email])).rows[0];
+  const hash=await bcrypt.hash(password,10);
   if(!user){
-    const hash=await bcrypt.hash(password,10);
     user=(await pool.query("insert into users(workspace_id,full_name,email,password_hash,role) values($1,$2,$3,$4,$5) returning id,workspace_id,role,email",[ws.id,"Ismail bin Ibrahim",email,hash,"admin"])).rows[0];
+  } else {
+    await pool.query("update users set password_hash=$1, status='active' where id=$2",[hash,user.id]);
   }
   const count=(await pool.query("select count(*)::int as n from properties where workspace_id=$1",[ws.id])).rows[0].n;
   if(count===0){
