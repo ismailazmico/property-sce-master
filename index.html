@@ -146,7 +146,7 @@ function refreshCampaignPreview(){
   const counts={Cold:0,Warm:0,Hot:0};rs.forEach(r=>{const f=String((r.brief||{}).funnel||r.funnel||"");if(counts[f]!=null)counts[f]++});
   const leads=d.leads.filter(l=>String(l.property_id||"")===String(p.id));
   el.innerHTML=`<div class="card" style="background:#0d1627"><b>${esc(p.name)}</b><div class="muted mini" style="margin-top:5px">${esc(p.location||"")} · RM ${Number(p.price||0).toLocaleString("en-MY")}</div><div class="row" style="margin-top:10px"><span class="tag">Cold ${counts.Cold}</span><span class="tag">Warm ${counts.Warm}</span><span class="tag">Hot ${counts.Hot}</span><span class="tag">Leads ${leads.length}</span><span class="tag">${rs.length}/9 creatives</span></div>${rs.length<9?"<p class='muted mini' style='margin:9px 0 0'>Tip: pergi Creative dan tekan Generate 9 Creatives sebelum publish.</p>":"<p class='mini' style='margin:9px 0 0'>✅ 9 creative tersedia untuk campaign.</p>"}</div>`;
-  const name=document.getElementById("campName");if(name&&!name.value)name.value=`${p.name} — Launch`;
+  const name=document.getElementById("campName");if(name)name.value=`${p.name} — Launch`;
 }
 async function createCampaign(){
   const pid=document.getElementById("campProperty")?.value; const p=d.properties.find(x=>String(x.id)===String(pid));
