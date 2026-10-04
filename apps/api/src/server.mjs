@@ -63,7 +63,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.3.0",db,r2:r2Ready()});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.3.2",db,r2:r2Ready()});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
