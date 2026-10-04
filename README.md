@@ -1,33 +1,13 @@
-# PROPERTY SCE MASTER V4.0 — Production Blueprint
+# PROPERTY SCE MASTER V4.2.0 — Creative Poster Preview
 
-This is the consolidated production architecture package.
+Next production module after V4.1.7:
+- Creative Renderer connects Property + Media Library + Funnel.
+- Media uses a 15-minute Cloudflare R2 signed URL.
+- Poster preview supports 4:5, 1:1 and 9:16.
+- Creative spec is saved to `creative_renders`.
+- WhatsApp CTA defaults to 019-7498699.
 
-## Included
-- Responsive web application
-- REST API with JWT boundary
-- RBAC model
-- Multi-tenant workspace model
-- PostgreSQL schema
-- Property management
-- Media signed-upload boundary
-- Lead CRM
-- AI job endpoint
-- Creative render endpoint
-- Campaign data model
-- Audit log model
-- Docker deployment foundation
-- Environment template
-- Production security checklist
-
-## Demo frontend
-Open `apps/web/index.html`.
-
-## API
-`cd apps/api && npm install && npm run dev`
-
-## Database
-Run PostgreSQL and apply:
-`database/migrations/001_init.sql`
-
-## Important
-The included API has a safe architectural boundary but uses demo/in-memory fallbacks when DATABASE_URL is absent. Replace demo authentication and secrets before production deployment.
+## Deploy
+API: replace `apps/api/src/server.mjs` and `apps/api/package.json` in the existing API service, then redeploy.
+Web: deploy `apps/web/index.html` to the existing static frontend, then redeploy.
+Do not paste R2 secret keys into chat or source code.
