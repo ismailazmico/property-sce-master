@@ -63,7 +63,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.1",db,r2:r2Ready()});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.2.2",db,r2:r2Ready()});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -160,15 +160,53 @@ app.post("/api/media/upload",auth,upload.single("file"),async(req,res)=>{
 });
 
 function factLockedOutput(property,funnel,audience,angle){
-  const facts=(property.verified_usps||[]).filter(Boolean);
-  const factLine=facts.length?facts.join(" • "):"Maklumat berdasarkan Property Database.";
-  const headline=funnel==="Cold"?`Kenali ${property.name} di ${property.location||""}`:funnel==="Warm"?`Semak fakta ${property.name} sebelum buat keputusan`: `Jom semak viewing ${property.name}`;
-  const primary=`${property.bedrooms??"-"} bilik • ${property.bathrooms??"-"} bilik air • ${property.built_up||"-"}.\n${factLine}.\nHarga: ${property.price!=null?`RM ${Number(property.price).toLocaleString("en-MY")}`:"Hubungi untuk harga"}.`;
-  return {language:"ms-MY",headline,hook:`${headline}.`,primary_text:primary,cta:"WhatsApp untuk detail & viewing",whatsapp:`Assalamualaikum, saya berminat dengan ${property.name}. Boleh saya dapatkan detail dan info viewing?`,video_30s:{scene_1:"Hook property",scene_2:"Paparkan fakta yang disahkan",scene_3:"CTA WhatsApp"},funnel,audience,angle,fact_check:{status:"PASS",used_verified_facts:facts,generated_claims:[]}};
+  const verified=(property.verified_usps||[]).filter(Boolean).map(x=>String(x).trim()).filter(Boolean);
+  const normalizeBuiltUp=(value)=>{
+    const raw=String(value??"").trim();
+    if(!raw||raw==="-") return "";
+    if(/sq\.?\s*ft|sqft|kaki\s*persegi/i.test(raw)) return raw;
+    if(/^\d[\d,]*(?:\.\d+)?$/.test(raw)) return `${raw} sqft`;
+    return raw;
+  };
+  const builtUp=normalizeBuiltUp(property.built_up);
+  const coreFacts=[];
+  if(property.bedrooms!=null) coreFacts.push(`${property.bedrooms} bilik`);
+  if(property.bathrooms!=null) coreFacts.push(`${property.bathrooms} bilik air`);
+  if(builtUp) coreFacts.push(builtUp);
+  if(property.tenure) coreFacts.push(String(property.tenure).trim());
+  if(property.lot_type) coreFacts.push(`Lot/Tanah: ${String(property.lot_type).trim()}`);
+  const allFacts=[...coreFacts,...verified];
+  const facts=[...new Set(allFacts)];
+  const factLine=facts.length?facts.join(" • "):"Maklumat property belum lengkap.";
+  const location=String(property.location||"").trim();
+  const headline=funnel==="Cold"
+    ?`Kenali ${property.name}${location?` di ${location}`:""}`
+    :funnel==="Warm"
+      ?`Semak fakta ${property.name} sebelum buat keputusan`
+      :`Jom semak viewing ${property.name}`;
+  const price=property.price!=null?`RM ${Number(property.price).toLocaleString("en-MY")}`:"Hubungi untuk harga";
+  const primary=[
+    `${property.name}${location?` di ${location}`:""}.`,
+    factLine,
+    `Harga: ${price}.`,
+    "Untuk detail penuh dan info viewing, WhatsApp sekarang."
+  ].join("\n");
+  return {
+    language:"ms-MY",
+    headline,
+    hook:`${headline}.`,
+    primary_text:primary,
+    cta:"WhatsApp untuk detail & viewing",
+    whatsapp:`Assalamualaikum, saya berminat dengan ${property.name}. Boleh saya dapatkan detail dan info viewing?`,
+    video_30s:{scene_1:"Hook property",scene_2:"Paparkan fakta yang disahkan",scene_3:"CTA WhatsApp"},
+    funnel,audience,angle,
+    facts,
+    fact_check:{status:"PASS",used_verified_facts:facts,generated_claims:[]}
+  };
 }
 app.post("/api/ai/jobs",auth,async(req,res)=>{const {property,funnel="Cold",audience="Pembeli rumah",angle="Property Showcase"}=req.body||{};if(!property?.name)return res.status(400).json({error:"property required"});const output=factLockedOutput(property,funnel,audience,angle);const job={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,property_id:property.id||null,status:"completed",output};if(pool){const r=await pool.query(`insert into ai_jobs(id,workspace_id,owner_id,property_id,funnel_stage,request,response,provider,status) values($1,$2,$3,$4,$5,$6,$7,$8,$9) returning *`,[job.id,job.workspace_id,job.owner_id,job.property_id,funnel,JSON.stringify(req.body),JSON.stringify(output),process.env.AI_PROVIDER||"demo","completed"]);return res.status(201).json(r.rows[0]);}demo.aiJobs.unshift(job);res.status(201).json(job);});
 
 app.get("/api/ai/jobs",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from ai_jobs where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.aiJobs.filter(x=>x.workspace_id===req.user.workspace_id));});
 app.post("/api/creative/renders",auth,async(req,res)=>{const render={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,status:"draft",...req.body};if(pool){const r=await pool.query(`insert into creative_renders(id,workspace_id,owner_id,property_id,format,brief,status) values($1,$2,$3,$4,$5,$6,$7) returning *`,[render.id,render.workspace_id,render.owner_id,render.property_id,render.format,JSON.stringify(render.brief||{}),"draft"]);return res.status(201).json(r.rows[0]);}demo.renders.unshift(render);res.status(201).json(render);});
 
-migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.2`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.2.2`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
