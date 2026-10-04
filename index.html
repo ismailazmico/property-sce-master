@@ -22,6 +22,8 @@ const K="sce4";
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 function toast(s){let x=document.getElementById("toast");x.textContent=s;x.style.display="block";setTimeout(()=>x.style.display="none",1800)}
 async function api(path,opts={},retry=true){const h={...(opts.headers||{})};if(!(opts.body instanceof FormData))h["Content-Type"]="application/json";if(token)h.Authorization=`Bearer ${token}`;const r=await fetch(API+path,{...opts,headers:h});if(r.status===401&&retry&&path!=="/api/auth/login"){token="";localStorage.removeItem("sce_token");if(await login())return api(path,opts,false)}if(!r.ok)throw new Error((await r.text())||r.statusText);return r.json()}
+async function apiBlob(path,opts={},retry=true){const h={...(opts.headers||{})};if(token)h.Authorization=`Bearer ${token}`;const r=await fetch(API+path,{...opts,headers:h});if(r.status===401&&retry&&path!=="/api/auth/login"){token="";localStorage.removeItem("sce_token");if(await login())return apiBlob(path,opts,false)}if(!r.ok)throw new Error((await r.text())||r.statusText);return r.blob()}
+
 async function login(){try{const h={"Content-Type":"application/json"};const r=await fetch(API+"/api/auth/login",{method:"POST",headers:h,body:JSON.stringify({email:"admin@sce.local",password:"demo123"})});if(!r.ok)throw new Error("login failed");const j=await r.json();token=j.token;localStorage.setItem("sce_token",token);return true}catch(e){return false}}
 async function sync(){if(!token&&!(await login())){try{d=JSON.parse(localStorage.getItem(K)||"null")||{properties:[],media:[],leads:[],ai:[],renders:[]}}catch{}return}
  try{[d.properties,d.media,d.leads]=await Promise.all([api("/api/properties"),api("/api/media"),api("/api/leads")]);d.ai=await api("/api/ai/jobs");d.renders=await api("/api/creative/renders");}catch(e){toast("API belum tersedia — mode tempatan digunakan");try{d=JSON.parse(localStorage.getItem(K)||"null")||d}catch{}}stats();render();}
@@ -86,8 +88,7 @@ async function renderCreative(){
 }
 async function downloadPoster(meta){
   try{
-    const r=await api(`/api/media/${encodeURIComponent(meta.mediaId)}/file`);
-    const blob=await r.blob();
+    const blob=await apiBlob(`/api/media/${encodeURIComponent(meta.mediaId)}/file`);
     const src=URL.createObjectURL(blob);
     const img=new Image();
     img.onload=()=>{
