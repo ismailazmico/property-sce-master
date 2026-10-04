@@ -44,7 +44,10 @@ create table if not exists leads(
    check(stage in ('new','contacted','viewing','closed')),
  source text, notes text,
  created_at timestamptz not null default now(),
- updated_at timestamptz not null default now()
+ updated_at timestamptz not null default now(),
+ campaign_id uuid,
+ creative_id uuid,
+ funnel_stage text
 );
 create index if not exists leads_workspace_stage_idx on leads(workspace_id,stage);
 
@@ -71,3 +74,9 @@ create table if not exists campaigns(
 create table if not exists audit_logs(
  id bigserial primary key,workspace_id uuid,actor_id uuid,action text,entity_type text,entity_id uuid,metadata jsonb,created_at timestamptz default now()
 );
+
+-- V4.5.1 lead attribution
+alter table leads add column if not exists campaign_id uuid;
+alter table leads add column if not exists creative_id uuid;
+alter table leads add column if not exists funnel_stage text;
+create index if not exists leads_campaign_idx on leads(workspace_id,campaign_id);
