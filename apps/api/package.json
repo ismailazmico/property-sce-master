@@ -1,9 +1,1 @@
-{
-  "name":"property-sce-master-api",
-  "version":"4.2.0",
-  "type":"module",
-  "scripts":{"start":"node src/server.mjs","dev":"node --watch src/server.mjs"},
-  "dependencies":{
-    "express":"^5.1.0","cors":"^2.8.5","helmet":"^8.1.0","zod":"^3.25.0","jsonwebtoken":"^9.0.2","bcryptjs":"^3.0.2","pg":"^8.16.0","multer":"^2.0.2","@aws-sdk/client-s3":"^3.864.0","@aws-sdk/s3-request-presigner":"^3.864.0"
-  }
-}
+{"name":"property-sce-master-api","version":"4.3.2","type":"module","scripts":{"start":"node src/server.mjs","dev":"node --watch src/server.mjs"},"dependencies":{"express":"^5.1.0","cors":"^2.8.5","helmet":"^8.1.0","zod":"^3.25.0","jsonwebtoken":"^9.0.2","bcryptjs":"^3.0.2","pg":"^8.16.0","multer":"^2.0.2","@aws-sdk/client-s3":"^3.864.0","@aws-sdk/s3-request-presigner":"^3.864.0"}}
