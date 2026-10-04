@@ -1,12 +1,13 @@
 <!doctype html><html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PROPERTY SCE MASTER V5.9</title><style>
+<title>PROPERTY SCE MASTER V6.0</title><style>
 :root{--bg:#080d18;--p:#121b2e;--p2:#18243c;--l:#2a3955;--t:#f7f9fc;--m:#91a0b9;--a:#55d6be;--b:#7d8cff}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#070c15,#111b2f);color:var(--t);font:14px system-ui}.app{display:flex;min-height:100vh}.side{width:235px;position:fixed;inset:0 auto 0 0;background:#080d16;border-right:1px solid var(--l);padding:20px 13px}.brand{font-weight:900;font-size:18px;margin-bottom:24px}.brand span{color:var(--a)}nav button{display:block;width:100%;padding:11px;border:0;background:transparent;color:#aab6cb;text-align:left;border-radius:10px;margin:4px 0}nav button.active,nav button:hover{background:var(--p2);color:#fff}.main{margin-left:235px;padding:24px;width:calc(100% - 235px);max-width:1500px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:18px}h1{margin:0;font-size:28px}h2{margin:0 0 7px}.muted{color:var(--m)}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:linear-gradient(180deg,#141e32,#0f1728);border:1px solid var(--l);border-radius:16px;padding:16px}.stat b{display:block;font-size:28px;margin:7px 0}.hero{padding:24px;border-radius:18px;background:linear-gradient(135deg,#1b3151,#12383a);border:1px solid #365a6a}.hero h2{font-size:30px}.btn{padding:10px 13px;border:1px solid #3b4b6b;background:#202d47;color:#fff;border-radius:10px}.primary{background:var(--a);color:#07131a;font-weight:800}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.form{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.field label{display:block;font-size:12px;color:var(--m);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;background:#0a1322;border:1px solid var(--l);border-radius:9px;color:#fff}.wide{grid-column:1/-1}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px;border-bottom:1px solid var(--l);text-align:left}.tag{padding:5px 8px;border-radius:999px;background:#182640;border:1px solid #31425f;font-size:11px}.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.lead{padding:10px;border:1px solid var(--l);border-radius:10px;margin-top:8px;background:#0f1829}.creative-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.poster-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pipeline-card{min-height:145px}.pipeline-card .num{font-size:28px;font-weight:900;margin:8px 0}.exec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.exec-kpi{min-height:118px}.exec-kpi b{display:block;font-size:27px;margin-top:7px}.exec-section{margin-top:12px}.exec-list{display:grid;gap:8px}.exec-row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--l)}.exec-row:last-child{border-bottom:0}.stage-bar{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap}.stage-chip{flex:1;min-width:92px;padding:10px;border:1px solid var(--l);border-radius:12px;background:#0f1829}.stage-chip b{display:block;font-size:22px;margin-top:4px}.progress-track{height:7px;background:#0a1322;border-radius:99px;overflow:hidden;margin-top:7px}.progress-fill{height:100%;background:var(--a);border-radius:99px}.library-item{padding:12px;border-bottom:1px solid var(--l)}.library-item:last-child{border-bottom:0}.mini{font-size:12px}.toast{position:fixed;right:20px;bottom:20px;padding:12px 15px;background:#192844;border:1px solid #425878;border-radius:10px;display:none}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(2,1fr)}.exec-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.exec-grid{grid-template-columns:1fr}.side{width:62px}.brand{font-size:0;text-align:center}.brand:after{content:"S";font-size:22px;color:var(--a)}nav button{font-size:0;text-align:center}nav button:first-letter{font-size:19px}.main{margin-left:62px;width:calc(100% - 62px);padding:14px}.grid,.form,.kanban{grid-template-columns:1fr}h1{font-size:22px}}
 
 .forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.forecast-box{background:#0f1829;border:1px solid var(--l);border-radius:12px;padding:12px}.forecast-box b{display:block;font-size:24px;margin-top:5px}.forecast-settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.forecast-settings input{width:100%;padding:9px;background:#0a1322;border:1px solid var(--l);border-radius:9px;color:#fff}.forecast-label{font-size:11px;color:var(--m);display:block;margin-bottom:4px}.target-track{height:8px;background:#0a1322;border-radius:99px;overflow:hidden;margin-top:8px}.target-fill{height:100%;background:var(--a);border-radius:99px}@media(max-width:900px){.forecast-grid{grid-template-columns:repeat(2,1fr)}.forecast-settings{grid-template-columns:1fr 1fr}}@media(max-width:650px){.forecast-grid,.forecast-settings{grid-template-columns:1fr}}
 </style></head><body>
 <div class="app"><aside class="side"><div class="brand">PROPERTY <span>SCE</span> MASTER</div><nav id="nav"><button class="active" data-p="dashboard">⌂ Dashboard</button><button data-p="properties">▣ Properties</button><button data-p="media">▧ Media</button><button data-p="leads">♙ Leads CRM</button><button data-p="ai">✦ AI Engine</button><button data-p="creative">◈ Creative</button><button data-p="campaigns">◉ Campaigns</button><button data-p="settings">⚙ Settings</button></nav></aside>
-<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V5.9</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
+<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V6.0</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
 <section id="dashboard" class="page active"><div class="hero"><h2>Property Marketing Operating System</h2><p class="muted">Satu sistem untuk property facts, AI ads, creative, leads, campaign dan sales pipeline & sales management.</p></div><div id="executiveDashboard" style="margin-top:13px"></div><div id="salesPerformanceIntelligence"></div><div id="marketingSpendIntelligence"></div><div id="budgetScalingIntelligence"></div><div id="forecastConfidenceGuardrails"></div>
+<div id="kpiCommandCenter" style="margin-top:13px"></div>
 <div id="executiveReportCenter" style="margin-top:13px"></div>
 <div id="reportingIntelligence"></div><div id="monthlySalesReport"></div><div id="salesForecast"></div></section>
 <section id="properties" class="page"><div class="between"><div><h2>Property Database</h2><p class="muted">Source of truth.</p></div><button class="btn primary" onclick="addProperty()">＋ Add Property</button></div><div class="card" style="margin-top:12px"><div id="props"></div></div></section>
@@ -713,6 +714,76 @@ function reportPeriodRows(rows,mode,startValue,endValue){
     return d&&d>=bounds.start&&d<=bounds.end;
   });
 }
+
+function renderKPICommandCenter(){
+  const el=document.getElementById("kpiCommandCenter"); if(!el)return;
+  const rows=getReportRows();
+  const sales=rows.reduce((n,x)=>n+x.sale,0), comm=rows.reduce((n,x)=>n+x.commission,0);
+  const spend=Number((typeof getActualSpend==="function"?getActualSpend():0)||0);
+  const leads=Array.isArray(d.leads)?d.leads:[];
+  const closed=rows.length;
+  const cpl=leads.length?spend/leads.length:0;
+  const costClose=closed?spend/closed:0;
+  const roas=spend>0?sales/spend:0;
+  const commissionReturn=spend>0?comm/spend:0;
+  const salesTarget=Number(d.salesTarget||d.settings?.sales_target||1000000);
+  const commTarget=Number(d.commissionTarget||d.settings?.commission_target||30000);
+  const salesPct=salesTarget>0?(sales/salesTarget)*100:0;
+  const commPct=commTarget>0?(comm/commTarget)*100:0;
+  const health = closed>0 && spend>0 && roas>=5 ? ["🟢","HEALTHY","Ada closing + ROAS ≥ 5x"]
+    : closed>0 ? ["🟡","WATCH","Ada closing tetapi data spend/ROAS perlu dipantau"]
+    : leads.length>=10 ? ["🟡","BUILD","Ada data lead tetapi belum Closed Won"]
+    : leads.length>0 ? ["🔵","EARLY","Data masih awal"]
+    : ["⚪","NO DATA","Belum ada lead"];
+
+  const group=(key)=>Object.values(rows.reduce((m,x)=>{
+    const k=x[key]||"—";
+    m[k]??={name:k,count:0,sales:0,commission:0};
+    m[k].count++; m[k].sales+=x.sale; m[k].commission+=x.commission;
+    return m;
+  },{})).sort((a,b)=>b.sales-a.sales);
+
+  const topCampaign=group("campaign")[0], topProperty=group("property")[0], topCreative=group("creative")[0];
+  const money=moneyRM0;
+  const pct=x=>`${Math.min(999,Math.max(0,x)).toFixed(1)}%`;
+  const targetBar=(label,actual,target,percent)=>`<div style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>${label}</b><span>${money(actual)} / ${money(target)}</span></div><div style="height:8px;background:#07101d;border-radius:8px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${Math.min(100,Math.max(0,percent))}%;background:#55d6c2"></div></div><div class="muted mini" style="margin-top:4px">${pct(percent)} achieved</div></div>`;
+  const winner=(title,x,icon)=>x?`<div class="card" style="background:#0d1627"><h3>${icon} ${title}</h3><b>${esc(x.name)}</b><div class="muted mini">${x.count} closed won · Sales ${money(x.sales)} · Commission ${money(x.commission)}</div></div>`:`<div class="card" style="background:#0d1627"><h3>${icon} ${title}</h3><p class="muted mini">Belum ada data.</p></div>`;
+
+  el.innerHTML=`<div class="card exec-section">
+    <h2>🎯 Management KPI Command Center · V6.0</h2>
+    <p class="muted mini">Paparan pengurusan untuk Sales, Commission, Marketing Efficiency dan Business Health. Actual spend hanya digunakan jika data spend tersedia.</p>
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>${health[0]} Business Health · ${health[1]}</h3>
+      <p class="muted mini">${health[2]}</p>
+    </div>
+    <div class="grid" style="margin-top:10px">
+      <div class="card stat">Sales Value<b>${money(sales)}</b><span class="mini muted">Closed Won</span></div>
+      <div class="card stat">Commission<b>${money(comm)}</b><span class="mini muted">Actual commission</span></div>
+      <div class="card stat">Leads<b>${leads.length}</b><span class="mini muted">${closed} Closed Won</span></div>
+      <div class="card stat">Actual Spend<b>${money(spend)}</b><span class="mini muted">Marketing spend</span></div>
+      <div class="card stat">CPL<b>${money(cpl)}</b><span class="mini muted">Spend ÷ Leads</span></div>
+      <div class="card stat">Cost / Close<b>${money(costClose)}</b><span class="mini muted">Spend ÷ Closed Won</span></div>
+      <div class="card stat">ROAS<b>${spend>0?roas.toFixed(2)+"x":"—"}</b><span class="mini muted">Sales ÷ Spend</span></div>
+      <div class="card stat">Commission Return<b>${spend>0?commissionReturn.toFixed(2)+"x":"—"}</b><span class="mini muted">Commission ÷ Spend</span></div>
+    </div>
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>🎯 Target Progress</h3>
+      ${targetBar("Sales Target",sales,salesTarget,salesPct)}
+      ${targetBar("Commission Target",comm,commTarget,commPct)}
+    </div>
+    <div class="grid" style="margin-top:10px">
+      ${winner("Top Property",topProperty,"🏠")}
+      ${winner("Top Campaign",topCampaign,"📢")}
+      ${winner("Top Creative",topCreative,"🎨")}
+    </div>
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>📌 Management Action</h3>
+      <p class="muted mini">${closed>0 && spend>0 && roas>=5 ? "Maintain quality dan scale secara berperingkat. Jangan agresif semata-mata berdasarkan satu closing." : leads.length>=10 ? "Fokus tingkatkan conversion lead → viewing → closing sambil kumpul lebih banyak data." : "Fokus kumpul data lead dan attribution sebelum membuat keputusan scaling besar."}</p>
+      <button onclick="exportSalesReportCSV()">⬇️ Export Management Sales CSV</button>
+    </div>
+  </div>`;
+}
+
 function renderExecutiveReportCenter(){
   const el=document.getElementById("executiveReportCenter"); if(!el)return;
   const rows=getReportRows();
@@ -741,7 +812,7 @@ function renderExecutiveReportCenter(){
   }
 
   el.innerHTML=`<div class="card exec-section">
-    <h2>📋 Executive Report Center · V5.9</h2>
+    <h2>📋 Executive Report Center · V6.0</h2>
     <p class="muted mini">Ringkasan pengurusan berdasarkan Closed Won dan attribution yang telah disahkan. Bukan actual ad spend.</p>
     <div class="row" style="margin-top:10px;gap:8px;align-items:center">
       <select id="reportPeriodMode" onchange="renderExecutiveReportCenter()">
@@ -1048,7 +1119,7 @@ function render(){
   if(currentP&&!document.getElementById("ch").value)document.getElementById("ch").value=currentP.name||"";
   props.innerHTML=d.properties.map(p=>`<div style="padding:13px;border-bottom:1px solid #2a3955"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1"><b>${esc(p.name)}</b> · ${esc(p.location)} · RM ${Number(p.price||0).toLocaleString("en-MY")}<br><span class="muted">${p.bedrooms||"-"} bed · ${p.bathrooms||"-"} bath · ${esc(p.built_up||"-")} · ${esc(p.tenure||"-")}</span></div><div class="row"><button class="btn" onclick="editProperty('${esc(p.id)}')">✏️ Edit</button><button class="btn" style="border-color:#8b4250" onclick="deleteProperty('${esc(p.id)}')">🗑️ Delete</button></div></div></div>`).join("")||"<p class='muted'>Tiada property.</p>";
   medias.innerHTML=d.media.length?d.media.map(m=>`<div style="padding:10px;border-bottom:1px solid #2a3955">${esc(m.original_name||m.name||"Media")} <span class="tag">${esc(m.tag||"")}</span></div>`).join(""):"<p class='muted'>Tiada media.</p>";
-  renderSalesIntelligence();renderSalesCRM();renderExecutiveDashboard();renderSalesPerformanceIntelligence();renderMarketingSpendIntelligence();renderBudgetScalingIntelligence();renderForecastConfidenceGuardrails();renderExecutiveReportCenter();renderReportingIntelligence();
+  renderSalesIntelligence();renderSalesCRM();renderExecutiveDashboard();renderSalesPerformanceIntelligence();renderMarketingSpendIntelligence();renderBudgetScalingIntelligence();renderForecastConfidenceGuardrails();renderKPICommandCenter();renderExecutiveReportCenter();renderReportingIntelligence();
   renderCreativeLibrary();
 }
 
