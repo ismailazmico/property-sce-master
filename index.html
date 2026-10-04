@@ -7,7 +7,7 @@
 <section id="dashboard" class="page active"><div class="hero"><h2>Property Marketing Operating System</h2><p class="muted">Satu sistem untuk property facts, AI ads, creative, leads dan campaign.</p></div><div class="grid" style="margin-top:13px"><div class="card stat">Properties<b id="sp">0</b></div><div class="card stat">Media<b id="sm">0</b></div><div class="card stat">Leads<b id="sl">0</b></div><div class="card stat">AI Jobs<b id="sa">0</b></div></div></section>
 <section id="properties" class="page"><div class="between"><div><h2>Property Database</h2><p class="muted">Source of truth.</p></div><button class="btn primary" onclick="addProperty()">＋ Add Property</button></div><div class="card" style="margin-top:12px"><div id="props"></div></div></section>
 <section id="media" class="page"><div class="card"><h2>Media Library <span class="tag">PROPERTY-LINKED</span></h2><p class="muted">Upload terus ke property dan Cloudflare R2.</p><div class="form"><div class="field"><label>Property</label><select id="mp"></select></div><div class="field"><label>Tag Media</label><select id="mt"><option value="hero">Hero</option><option value="exterior">Exterior</option><option value="interior">Interior</option><option value="kitchen">Kitchen</option><option value="bedroom">Bedroom</option><option value="bathroom">Bathroom</option><option value="floorplan">Floor Plan</option></select></div></div><div class="row" style="margin-top:11px"><input id="mediaFile" type="file" accept="image/*"><button class="btn primary" onclick="addMedia()">Upload Media</button></div></div><div class="card" style="margin-top:12px"><div id="medias"></div></div></section>
-<section id="leads" class="page"><div class="between"><div><h2>Lead CRM <span class="tag">V4.6.1 ATTRIBUTION FIX</span></h2><p class="muted">New → Contacted → Viewing → Closed · setiap lead boleh dipautkan kepada Campaign + Creative.</p></div><button class="btn primary" onclick="addLead()">＋ Lead</button></div><div class="card" style="margin-top:12px"><div class="form"><div class="field"><label>Property</label><select id="leadProperty" onchange="refreshLeadAttributionOptions()"></select></div><div class="field"><label>Campaign</label><select id="leadCampaign"></select></div><div class="field"><label>Funnel</label><select id="leadFunnel"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Creative</label><select id="leadCreative"></select></div></div><p class="muted mini" style="margin:9px 0 0">Tip: pilih Property + Campaign + Creative sebelum tekan ＋ Lead untuk attribution yang tepat.</p></div><div class="kanban" style="margin-top:12px"><div class="card"><span class="tag">NEW</span><div id="new"></div></div><div class="card"><span class="tag">CONTACTED</span><div id="contacted"></div></div><div class="card"><span class="tag">VIEWING</span><div id="viewing"></div></div><div class="card"><span class="tag">CLOSED</span><div id="closed"></div></div></div></section>
+<section id="leads" class="page"><div class="between"><div><h2>Lead CRM <span class="tag">V4.6.2 ATTRIBUTION FIX</span></h2><p class="muted">New → Contacted → Viewing → Closed · setiap lead boleh dipautkan kepada Campaign + Creative.</p></div><button class="btn primary" onclick="addLead()">＋ Lead</button></div><div class="card" style="margin-top:12px"><div class="form"><div class="field"><label>Property</label><select id="leadProperty" onchange="refreshLeadAttributionOptions()"></select></div><div class="field"><label>Campaign</label><select id="leadCampaign" onchange="refreshLeadAttributionOptions()"></select></div><div class="field"><label>Funnel</label><select id="leadFunnel" onchange="refreshLeadAttributionOptions()"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Creative</label><select id="leadCreative"></select></div></div><p class="muted mini" style="margin:9px 0 0">Tip: pilih Property + Campaign + Creative sebelum tekan ＋ Lead untuk attribution yang tepat.</p></div><div class="kanban" style="margin-top:12px"><div class="card"><span class="tag">NEW</span><div id="new"></div></div><div class="card"><span class="tag">CONTACTED</span><div id="contacted"></div></div><div class="card"><span class="tag">VIEWING</span><div id="viewing"></div></div><div class="card"><span class="tag">CLOSED</span><div id="closed"></div></div></div></section>
 <section id="ai" class="page"><div class="card"><h2>AI Ads Engine <span class="tag">FACT-LOCKED</span></h2><div class="form"><div class="field"><label>Property</label><select id="aip"></select></div><div class="field"><label>Funnel</label><select id="f"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Audience</label><input id="aud" value="Pembeli rumah / keluarga muda"></div><div class="field"><label>Angle</label><select id="angle"><option>Property Showcase</option><option>Family Lifestyle</option><option>Location</option><option>Features</option><option>Price & CTA</option></select></div></div><button class="btn primary" style="margin-top:11px" onclick="runAI()">✦ Generate Ads</button></div><div id="aout" style="margin-top:12px"></div></section>
 <section id="creative" class="page"><div class="card"><h2>Creative Renderer <span class="tag">V4.5 PRODUCTION</span></h2><p class="muted">Generate, download, reuse dan track creative untuk setiap property.</p><div class="form"><div class="field"><label>Property</label><select id="cp" onchange="onCreativePropertyChange()"></select></div><div class="field"><label>Media / Hero</label><select id="cm"></select></div><div class="field"><label>Format</label><select id="fmt"><option>4:5</option><option>1:1</option><option>9:16</option></select></div><div class="field"><label>Funnel</label><select id="cf"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Nama Creative</label><input id="cn" placeholder="Contoh: FB Cold Hero Oktober"></div><div class="field"><label>Headline</label><input id="ch" placeholder="Headline poster"></div><div class="field"><label>CTA</label><input id="cc" value="WHATSAPP UNTUK DETAIL"></div></div><div class="row" style="margin-top:11px"><button class="btn primary" onclick="renderCreative()">Generate Poster</button><button class="btn" onclick="bulkGenerateCreatives()">⚡ Generate 9 Creatives</button></div><div id="bulkout" style="margin-top:12px"></div></div><div id="cout" style="margin-top:12px"></div><div class="card" style="margin-top:12px"><h2>Creative Library</h2><p class="muted">Creative yang pernah dijana. Boleh reuse atau tandakan sudah digunakan.</p><div id="clib"></div></div></section>
 <section id="campaigns" class="page"><div class="card"><h2>Campaign Builder <span class="tag">V4.5 PRODUCTION</span></h2><p class="muted">Bina campaign daripada Property + Creative Library. Simpan terus ke database.</p><div class="form"><div class="field"><label>Property</label><select id="campProperty" onchange="refreshCampaignPreview()"></select></div><div class="field"><label>Platform</label><select id="campPlatform"><option>Meta</option><option>TikTok</option></select></div><div class="field"><label>Objective</label><select id="campObjective"><option>WhatsApp Leads</option><option>Lead Generation</option><option>Traffic</option></select></div><div class="field"><label>Funnel</label><select id="campFunnel"><option>Cold → Warm → Hot</option><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Nama Campaign</label><input id="campName" placeholder="Contoh: Jalan Harmoni — October Launch"></div><div class="field"><label>Daily Budget (RM)</label><input id="campBudget" type="number" min="0" step="1" value="30"></div><div class="field"><label>Tarikh Mula</label><input id="campStart" type="date"></div><div class="field"><label>Tarikh Tamat</label><input id="campEnd" type="date"></div><div class="field wide"><label>Nota</label><textarea id="campNotes" rows="3" placeholder="Contoh: Gunakan 9 creative; test WhatsApp CTA."></textarea></div></div><div id="campPreview" style="margin-top:12px"></div><div class="row" style="margin-top:12px"><button class="btn primary" onclick="createCampaign()">＋ Simpan Campaign</button><button class="btn" onclick="refreshCampaignPreview()">↻ Refresh Creative</button></div></div><div class="card" style="margin-top:12px"><h2>Campaign Library</h2><p class="muted">Campaign yang telah disimpan dan boleh disambung ke publishing connector kemudian.</p><div id="campaignList"></div></div></section>
@@ -71,28 +71,51 @@ function refreshLeadAttributionOptions(){
   if(currentP&&d.properties.some(p=>String(p.id)===String(currentP)))ps.value=currentP;
   else if(d.properties[0])ps.value=d.properties[0].id;
 
+  const selectedProperty=d.properties.find(p=>String(p.id)===String(ps.value));
   const pid=String(ps.value||"");
+  const pname=String(selectedProperty?.name||"").trim().toLowerCase();
   const currentC=cs.value;
-  const propertyCampaigns=(Array.isArray(d.campaigns)?d.campaigns:[]).filter(c=>String(c.property_id||"")===pid);
-  cs.innerHTML=`<option value="">Tanpa campaign</option>`+propertyCampaigns.map(c=>{
-    const p=d.properties.find(x=>String(x.id)===String(c.property_id));
-    return `<option value="${c.id}">${esc(c.name)}${p?` · ${esc(p.name)}`:""}</option>`;
-  }).join("");
+  const campaigns=Array.isArray(d.campaigns)?d.campaigns:[];
+
+  // Primary match: property_id. Fallback: property name, to handle legacy records/ID format differences.
+  const propertyCampaigns=campaigns.filter(c=>{
+    const cid=String(c.property_id??c.propertyId??"");
+    if(cid && cid===pid)return true;
+    const linkedName=String(c.property_name??c.propertyName??"").trim().toLowerCase();
+    if(linkedName && pname && linkedName===pname)return true;
+    const linkedProperty=d.properties.find(x=>String(x.id)===cid);
+    return !!(linkedProperty&&pname&&String(linkedProperty.name||"").trim().toLowerCase()===pname);
+  });
+
+  cs.innerHTML=`<option value="">Tanpa campaign</option>`+propertyCampaigns.map(c=>`<option value="${c.id}">${esc(c.name||"Campaign")}</option>`).join("");
   if(currentC&&propertyCampaigns.some(c=>String(c.id)===String(currentC)))cs.value=currentC;
   else if(propertyCampaigns.length===1)cs.value=propertyCampaigns[0].id;
 
   const selectedCampaign=propertyCampaigns.find(c=>String(c.id)===String(cs.value));
   const campaignCreativeIds=Array.isArray(selectedCampaign?.creative_ids)
     ? selectedCampaign.creative_ids.map(String)
-    : [];
+    : (Array.isArray(selectedCampaign?.creativeIds)?selectedCampaign.creativeIds.map(String):[]);
   const funnel=String(fs.value||"").toLowerCase();
-  const linked=d.renders.filter(r=>{
-    if(String(r.property_id||"")!==pid)return false;
-    if(campaignCreativeIds.length && !campaignCreativeIds.includes(String(r.id)))return false;
+
+  let linked=d.renders.filter(r=>String(r.property_id??r.propertyId??"")===pid);
+  // Legacy fallback: match renders by property name if IDs differ.
+  if(!linked.length&&pname){
+    linked=d.renders.filter(r=>{
+      const rp=d.properties.find(x=>String(x.id)===String(r.property_id??r.propertyId??""));
+      return String(rp?.name||"").trim().toLowerCase()===pname;
+    });
+  }
+  // If a campaign is selected and has a creative list, prefer those creatives.
+  if(selectedCampaign&&campaignCreativeIds.length){
+    const campaignLinked=linked.filter(r=>campaignCreativeIds.includes(String(r.id)));
+    if(campaignLinked.length)linked=campaignLinked;
+  }
+  linked=linked.filter(r=>{
     const b=r.brief||{};
     const rf=String(b.funnel||r.funnel||"").toLowerCase();
     return !funnel || !rf || rf===funnel;
   });
+
   const currentR=cr.value;
   cr.innerHTML=`<option value="">Tanpa creative</option>`+linked.map(r=>{
     const b=r.brief||{};
@@ -100,7 +123,15 @@ function refreshLeadAttributionOptions(){
   }).join("");
   if(currentR&&linked.some(r=>String(r.id)===String(currentR)))cr.value=currentR;
   else if(linked.length===1)cr.value=linked[0].id;
+
+  // Keep attribution controls in sync when Funnel/Campaign changes.
+  if(!fs.dataset.attributionBound){
+    fs.addEventListener("change",refreshLeadAttributionOptions);
+    cs.addEventListener("change",refreshLeadAttributionOptions);
+    fs.dataset.attributionBound="1";
+  }
 }
+
 async function addLead(){
   let n=prompt("Nama lead");if(!n)return;
   let phone=prompt("No telefon")||"-";
