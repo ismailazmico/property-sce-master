@@ -63,7 +63,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.2.2",db,r2:r2Ready()});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.2.3",db,r2:r2Ready()});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -209,4 +209,4 @@ app.post("/api/ai/jobs",auth,async(req,res)=>{const {property,funnel="Cold",audi
 app.get("/api/ai/jobs",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from ai_jobs where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.aiJobs.filter(x=>x.workspace_id===req.user.workspace_id));});
 app.post("/api/creative/renders",auth,async(req,res)=>{const render={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,status:"draft",...req.body};if(pool){const r=await pool.query(`insert into creative_renders(id,workspace_id,owner_id,property_id,format,brief,status) values($1,$2,$3,$4,$5,$6,$7) returning *`,[render.id,render.workspace_id,render.owner_id,render.property_id,render.format,JSON.stringify(render.brief||{}),"draft"]);return res.status(201).json(r.rows[0]);}demo.renders.unshift(render);res.status(201).json(render);});
 
-migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.2.2`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.2.3`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
