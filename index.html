@@ -1,13 +1,13 @@
 <!doctype html><html lang="ms"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PROPERTY SCE MASTER V4.5.0</title><style>
+<title>PROPERTY SCE MASTER V4.5.1</title><style>
 :root{--bg:#080d18;--p:#121b2e;--p2:#18243c;--l:#2a3955;--t:#f7f9fc;--m:#91a0b9;--a:#55d6be;--b:#7d8cff}*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#070c15,#111b2f);color:var(--t);font:14px system-ui}.app{display:flex;min-height:100vh}.side{width:235px;position:fixed;inset:0 auto 0 0;background:#080d16;border-right:1px solid var(--l);padding:20px 13px}.brand{font-weight:900;font-size:18px;margin-bottom:24px}.brand span{color:var(--a)}nav button{display:block;width:100%;padding:11px;border:0;background:transparent;color:#aab6cb;text-align:left;border-radius:10px;margin:4px 0}nav button.active,nav button:hover{background:var(--p2);color:#fff}.main{margin-left:235px;padding:24px;width:calc(100% - 235px);max-width:1500px}.top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:18px}h1{margin:0;font-size:28px}h2{margin:0 0 7px}.muted{color:var(--m)}.page{display:none}.page.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:linear-gradient(180deg,#141e32,#0f1728);border:1px solid var(--l);border-radius:16px;padding:16px}.stat b{display:block;font-size:28px;margin:7px 0}.hero{padding:24px;border-radius:18px;background:linear-gradient(135deg,#1b3151,#12383a);border:1px solid #365a6a}.hero h2{font-size:30px}.btn{padding:10px 13px;border:1px solid #3b4b6b;background:#202d47;color:#fff;border-radius:10px}.primary{background:var(--a);color:#07131a;font-weight:800}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.form{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.field label{display:block;font-size:12px;color:var(--m);margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:10px;background:#0a1322;border:1px solid var(--l);border-radius:9px;color:#fff}.wide{grid-column:1/-1}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px;border-bottom:1px solid var(--l);text-align:left}.tag{padding:5px 8px;border-radius:999px;background:#182640;border:1px solid #31425f;font-size:11px}.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.lead{padding:10px;border:1px solid var(--l);border-radius:10px;margin-top:8px;background:#0f1829}.creative-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.poster-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.library-item{padding:12px;border-bottom:1px solid var(--l)}.library-item:last-child{border-bottom:0}.mini{font-size:12px}.toast{position:fixed;right:20px;bottom:20px;padding:12px 15px;background:#192844;border:1px solid #425878;border-radius:10px;display:none}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(2,1fr)}}@media(max-width:650px){.side{width:62px}.brand{font-size:0;text-align:center}.brand:after{content:"S";font-size:22px;color:var(--a)}nav button{font-size:0;text-align:center}nav button:first-letter{font-size:19px}.main{margin-left:62px;width:calc(100% - 62px);padding:14px}.grid,.form,.kanban{grid-template-columns:1fr}h1{font-size:22px}}
 </style></head><body>
 <div class="app"><aside class="side"><div class="brand">PROPERTY <span>SCE</span> MASTER</div><nav id="nav"><button class="active" data-p="dashboard">⌂ Dashboard</button><button data-p="properties">▣ Properties</button><button data-p="media">▧ Media</button><button data-p="leads">♙ Leads CRM</button><button data-p="ai">✦ AI Engine</button><button data-p="creative">◈ Creative</button><button data-p="campaigns">◉ Campaigns</button><button data-p="settings">⚙ Settings</button></nav></aside>
-<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V4.5.0</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
+<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V4.5.1</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
 <section id="dashboard" class="page active"><div class="hero"><h2>Property Marketing Operating System</h2><p class="muted">Satu sistem untuk property facts, AI ads, creative, leads dan campaign.</p></div><div class="grid" style="margin-top:13px"><div class="card stat">Properties<b id="sp">0</b></div><div class="card stat">Media<b id="sm">0</b></div><div class="card stat">Leads<b id="sl">0</b></div><div class="card stat">AI Jobs<b id="sa">0</b></div></div></section>
 <section id="properties" class="page"><div class="between"><div><h2>Property Database</h2><p class="muted">Source of truth.</p></div><button class="btn primary" onclick="addProperty()">＋ Add Property</button></div><div class="card" style="margin-top:12px"><div id="props"></div></div></section>
 <section id="media" class="page"><div class="card"><h2>Media Library <span class="tag">PROPERTY-LINKED</span></h2><p class="muted">Upload terus ke property dan Cloudflare R2.</p><div class="form"><div class="field"><label>Property</label><select id="mp"></select></div><div class="field"><label>Tag Media</label><select id="mt"><option value="hero">Hero</option><option value="exterior">Exterior</option><option value="interior">Interior</option><option value="kitchen">Kitchen</option><option value="bedroom">Bedroom</option><option value="bathroom">Bathroom</option><option value="floorplan">Floor Plan</option></select></div></div><div class="row" style="margin-top:11px"><input id="mediaFile" type="file" accept="image/*"><button class="btn primary" onclick="addMedia()">Upload Media</button></div></div><div class="card" style="margin-top:12px"><div id="medias"></div></div></section>
-<section id="leads" class="page"><div class="between"><div><h2>Lead CRM</h2><p class="muted">New → Contacted → Viewing → Closed</p></div><button class="btn primary" onclick="addLead()">＋ Lead</button></div><div class="kanban" style="margin-top:12px"><div class="card"><span class="tag">NEW</span><div id="new"></div></div><div class="card"><span class="tag">CONTACTED</span><div id="contacted"></div></div><div class="card"><span class="tag">VIEWING</span><div id="viewing"></div></div><div class="card"><span class="tag">CLOSED</span><div id="closed"></div></div></div></section>
+<section id="leads" class="page"><div class="between"><div><h2>Lead CRM <span class="tag">V4.5.1 ATTRIBUTION</span></h2><p class="muted">New → Contacted → Viewing → Closed · setiap lead boleh dipautkan kepada Campaign + Creative.</p></div><button class="btn primary" onclick="addLead()">＋ Lead</button></div><div class="card" style="margin-top:12px"><div class="form"><div class="field"><label>Property</label><select id="leadProperty" onchange="refreshLeadAttributionOptions()"></select></div><div class="field"><label>Campaign</label><select id="leadCampaign"></select></div><div class="field"><label>Funnel</label><select id="leadFunnel"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Creative</label><select id="leadCreative"></select></div></div><p class="muted mini" style="margin:9px 0 0">Tip: pilih Property + Campaign + Creative sebelum tekan ＋ Lead untuk attribution yang tepat.</p></div><div class="kanban" style="margin-top:12px"><div class="card"><span class="tag">NEW</span><div id="new"></div></div><div class="card"><span class="tag">CONTACTED</span><div id="contacted"></div></div><div class="card"><span class="tag">VIEWING</span><div id="viewing"></div></div><div class="card"><span class="tag">CLOSED</span><div id="closed"></div></div></div></section>
 <section id="ai" class="page"><div class="card"><h2>AI Ads Engine <span class="tag">FACT-LOCKED</span></h2><div class="form"><div class="field"><label>Property</label><select id="aip"></select></div><div class="field"><label>Funnel</label><select id="f"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Audience</label><input id="aud" value="Pembeli rumah / keluarga muda"></div><div class="field"><label>Angle</label><select id="angle"><option>Property Showcase</option><option>Family Lifestyle</option><option>Location</option><option>Features</option><option>Price & CTA</option></select></div></div><button class="btn primary" style="margin-top:11px" onclick="runAI()">✦ Generate Ads</button></div><div id="aout" style="margin-top:12px"></div></section>
 <section id="creative" class="page"><div class="card"><h2>Creative Renderer <span class="tag">V4.5 PRODUCTION</span></h2><p class="muted">Generate, download, reuse dan track creative untuk setiap property.</p><div class="form"><div class="field"><label>Property</label><select id="cp" onchange="onCreativePropertyChange()"></select></div><div class="field"><label>Media / Hero</label><select id="cm"></select></div><div class="field"><label>Format</label><select id="fmt"><option>4:5</option><option>1:1</option><option>9:16</option></select></div><div class="field"><label>Funnel</label><select id="cf"><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Nama Creative</label><input id="cn" placeholder="Contoh: FB Cold Hero Oktober"></div><div class="field"><label>Headline</label><input id="ch" placeholder="Headline poster"></div><div class="field"><label>CTA</label><input id="cc" value="WHATSAPP UNTUK DETAIL"></div></div><div class="row" style="margin-top:11px"><button class="btn primary" onclick="renderCreative()">Generate Poster</button><button class="btn" onclick="bulkGenerateCreatives()">⚡ Generate 9 Creatives</button></div><div id="bulkout" style="margin-top:12px"></div></div><div id="cout" style="margin-top:12px"></div><div class="card" style="margin-top:12px"><h2>Creative Library</h2><p class="muted">Creative yang pernah dijana. Boleh reuse atau tandakan sudah digunakan.</p><div id="clib"></div></div></section>
 <section id="campaigns" class="page"><div class="card"><h2>Campaign Builder <span class="tag">V4.5 PRODUCTION</span></h2><p class="muted">Bina campaign daripada Property + Creative Library. Simpan terus ke database.</p><div class="form"><div class="field"><label>Property</label><select id="campProperty" onchange="refreshCampaignPreview()"></select></div><div class="field"><label>Platform</label><select id="campPlatform"><option>Meta</option><option>TikTok</option></select></div><div class="field"><label>Objective</label><select id="campObjective"><option>WhatsApp Leads</option><option>Lead Generation</option><option>Traffic</option></select></div><div class="field"><label>Funnel</label><select id="campFunnel"><option>Cold → Warm → Hot</option><option>Cold</option><option>Warm</option><option>Hot</option></select></div><div class="field"><label>Nama Campaign</label><input id="campName" placeholder="Contoh: Jalan Harmoni — October Launch"></div><div class="field"><label>Daily Budget (RM)</label><input id="campBudget" type="number" min="0" step="1" value="30"></div><div class="field"><label>Tarikh Mula</label><input id="campStart" type="date"></div><div class="field"><label>Tarikh Tamat</label><input id="campEnd" type="date"></div><div class="field wide"><label>Nota</label><textarea id="campNotes" rows="3" placeholder="Contoh: Gunakan 9 creative; test WhatsApp CTA."></textarea></div></div><div id="campPreview" style="margin-top:12px"></div><div class="row" style="margin-top:12px"><button class="btn primary" onclick="createCampaign()">＋ Simpan Campaign</button><button class="btn" onclick="refreshCampaignPreview()">↻ Refresh Creative</button></div></div><div class="card" style="margin-top:12px"><h2>Campaign Library</h2><p class="muted">Campaign yang telah disimpan dan boleh disambung ke publishing connector kemudian.</p><div id="campaignList"></div></div></section>
@@ -59,7 +59,34 @@ async function deleteProperty(id){
     if(confirm(`Delete dari server gagal.\n\n${msg}\n\nPadam salinan tempatan juga?`)){d.properties=d.properties.filter(x=>String(x.id)!==String(id));saveLocal();render();toast("Property dipadam secara tempatan")}
   }
 }
-async function addLead(){let n=prompt("Nama lead");if(!n)return;let p=prompt("No telefon")||"-";try{await api("/api/leads",{method:"POST",body:JSON.stringify({name:n,phone:p,stage:"new"})});await sync();toast("Lead disimpan ke database")}catch(e){d.leads.unshift({id:Date.now(),name:n,phone:p,stage:"new"});saveLocal();render();toast("Lead disimpan secara tempatan")}}
+function refreshLeadAttributionOptions(){
+  const ps=document.getElementById("leadProperty");
+  const cs=document.getElementById("leadCampaign");
+  const fs=document.getElementById("leadFunnel");
+  const cr=document.getElementById("leadCreative");
+  if(!ps||!cs||!fs||!cr)return;
+  const currentP=ps.value;
+  ps.innerHTML=d.properties.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.location||"")}</option>`).join("")||`<option value="">Tiada property</option>`;
+  if(currentP&&d.properties.some(p=>String(p.id)===String(currentP)))ps.value=currentP;else if(d.properties[0])ps.value=d.properties[0].id;
+  const pid=String(ps.value||"");
+  const currentC=cs.value;
+  cs.innerHTML=`<option value="">Tanpa campaign</option>`+d.campaigns.map(c=>{const p=d.properties.find(x=>String(x.id)===String(c.property_id));return `<option value="${c.id}">${esc(c.name)}${p?` · ${esc(p.name)}`:""}</option>`}).join("");
+  if(currentC&&d.campaigns.some(c=>String(c.id)===String(currentC)))cs.value=currentC;
+  const linked=d.renders.filter(r=>String(r.property_id||"")===pid);
+  const currentR=cr.value;
+  cr.innerHTML=`<option value="">Tanpa creative</option>`+linked.map(r=>{const b=r.brief||{};return `<option value="${r.id}">${esc(b.creative_name||b.headline||r.id)} · ${esc(b.funnel||r.funnel||"")}</option>`}).join("");
+  if(currentR&&linked.some(r=>String(r.id)===String(currentR)))cr.value=currentR;
+}
+async function addLead(){
+  let n=prompt("Nama lead");if(!n)return;
+  let phone=prompt("No telefon")||"-";
+  const propertyId=document.getElementById("leadProperty")?.value||null;
+  const campaignId=document.getElementById("leadCampaign")?.value||null;
+  const funnelStage=document.getElementById("leadFunnel")?.value||"Cold";
+  const creativeId=document.getElementById("leadCreative")?.value||null;
+  const payload={name:n,phone,stage:"new",property_id:propertyId||null,campaign_id:campaignId||null,creative_id:creativeId||null,funnel_stage:funnelStage};
+  try{await api("/api/leads",{method:"POST",body:JSON.stringify(payload)});await sync();toast(campaignId?"Lead disimpan + campaign attribution berjaya":"Lead disimpan ke database")}catch(e){d.leads.unshift({id:Date.now(),...payload});saveLocal();render();toast("Lead disimpan secara tempatan")}
+}
 async function moveLead(id,s){try{await api(`/api/leads/${id}`,{method:"PATCH",body:JSON.stringify({stage:s})});await sync()}catch(e){let x=d.leads.find(a=>a.id===id);if(x){x.stage=s;saveLocal();render()}}}
 async function runAI(){let p=d.properties.find(x=>String(x.id)===String(aip.value))||d.properties[0];if(!p)return;try{let r=await api("/api/ai/jobs",{method:"POST",body:JSON.stringify({property:p,funnel:f.value,audience:aud.value,angle:angle.value})});d.ai.unshift(r);stats();let o=r.response||r.output||{};lastAI={propertyId:p.id,property:p,output:o,funnel:f.value};aout.innerHTML=`<div class="card"><span class="tag">${esc(o.funnel||f.value)}</span><h2>${esc(o.headline)}</h2><p style="white-space:pre-line">${esc(o.primary_text)}</p><p><b>CTA:</b> ${esc(o.cta)}</p><p><b>WhatsApp:</b> ${esc(o.whatsapp)}</p><p><b>FACT CHECK:</b> ${esc(o.fact_check?.status||"PASS")} ✅</p><div class="row"><button class="btn primary" onclick='navigator.clipboard?.writeText(${JSON.stringify(o.primary_text||"")});toast("Copy berjaya")'>Copy</button><button class="btn" onclick="prepareCreativeFromAI()">🎨 Hantar ke Creative</button></div></div>`;toast("AI Ads generated & disimpan")}catch(e){toast("AI API belum tersedia")}}
 function prepareCreativeFromAI(){if(!lastAI){toast("Generate AI Ads dahulu");return}const p=lastAI.property;const o=lastAI.output||{};cp.value=p.id;filterCreativeMedia();cf.value=lastAI.funnel||f.value;ch.value=o.headline||p.name;cc.value=o.cta||"WHATSAPP UNTUK DETAIL";openPage("creative");toast("AI facts dihantar ke Creative Renderer")}
@@ -187,73 +214,27 @@ async function updateCampaignStatus(id,status){try{const c=await api(`/api/campa
 function renderCampaigns(){
   const el=document.getElementById("campaignList");
   if(!el)return;
-
   const campaigns=Array.isArray(d.campaigns)?d.campaigns:[];
   const leads=Array.isArray(d.leads)?d.leads:[];
-
   const total=campaigns.length;
   const running=campaigns.filter(c=>String(c.status||"draft")==="running").length;
   const paused=campaigns.filter(c=>String(c.status||"draft")==="paused").length;
   const budget=campaigns.reduce((sum,c)=>sum+Number(c.daily_budget||0),0);
-
   const totalLeads=leads.length;
   const viewing=leads.filter(l=>String(l.stage||"")==="viewing").length;
   const closed=leads.filter(l=>String(l.stage||"")==="closed").length;
   const conversion=totalLeads>0?((closed/totalLeads)*100):0;
-
-  const intelligence=`
-    <div class="card" style="margin-bottom:12px;background:#0d1627">
-      <h2 style="margin-bottom:6px">📊 Campaign Intelligence</h2>
-      <p class="muted mini" style="margin-bottom:12px">
-        Ringkasan prestasi Campaign & Lead semasa.
-      </p>
-
-      <div class="grid">
-        <div class="card stat">Campaign<b>${total}</b></div>
-        <div class="card stat">Running<b>${running}</b></div>
-        <div class="card stat">Paused<b>${paused}</b></div>
-        <div class="card stat">Daily Budget<b>RM ${budget.toLocaleString("en-MY")}</b></div>
-        <div class="card stat">Leads<b>${totalLeads}</b></div>
-        <div class="card stat">Viewing<b>${viewing}</b></div>
-        <div class="card stat">Closed<b>${closed}</b></div>
-        <div class="card stat">Conversion<b>${conversion.toFixed(1)}%</b></div>
-      </div>
-    </div>
-  `;
-
-  if(!campaigns.length){
-    el.innerHTML=intelligence+"<p class='muted'>Belum ada campaign.</p>";
-    return;
-  }
-
+  const intelligence=`<div class="card" style="margin-bottom:12px;background:#0d1627"><h2 style="margin-bottom:6px">📊 Campaign Intelligence</h2><p class="muted mini" style="margin-bottom:12px">Ringkasan prestasi Campaign & Lead semasa.</p><div class="grid"><div class="card stat">Campaign<b>${total}</b></div><div class="card stat">Running<b>${running}</b></div><div class="card stat">Paused<b>${paused}</b></div><div class="card stat">Daily Budget<b>RM ${budget.toLocaleString("en-MY")}</b></div><div class="card stat">Leads<b>${totalLeads}</b></div><div class="card stat">Viewing<b>${viewing}</b></div><div class="card stat">Closed<b>${closed}</b></div><div class="card stat">Conversion<b>${conversion.toFixed(1)}%</b></div></div></div>`;
+  if(!campaigns.length){el.innerHTML=intelligence+"<p class='muted'>Belum ada campaign.</p>";return}
   const library=campaigns.slice(0,30).map(c=>{
     const p=d.properties.find(x=>String(x.id)===String(c.property_id));
     const ids=Array.isArray(c.creative_ids)?c.creative_ids:(c.creative_ids||[]);
-    return `
-      <div class="library-item">
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-          <div>
-            <b>${esc(c.name)}</b>
-            <div class="muted mini">
-              ${esc(p?.name||"Property")} · ${esc(c.platform||"")} · ${esc(c.objective||"")} · ${ids.length} creative
-            </div>
-          </div>
-          <span class="tag">${esc(c.status||"draft")}</span>
-        </div>
-        <div class="row" style="margin-top:8px">
-          <span class="tag">RM ${Number(c.daily_budget||0).toLocaleString("en-MY")}/hari</span>
-          <select onchange="updateCampaignStatus('${esc(c.id)}',this.value)">
-            <option value="draft" ${c.status==="draft"?"selected":""}>Draft</option>
-            <option value="ready" ${c.status==="ready"?"selected":""}>Ready</option>
-            <option value="running" ${c.status==="running"?"selected":""}>Running</option>
-            <option value="paused" ${c.status==="paused"?"selected":""}>Paused</option>
-            <option value="completed" ${c.status==="completed"?"selected":""}>Completed</option>
-          </select>
-        </div>
-      </div>
-    `;
+    const cl=leads.filter(l=>String(l.campaign_id||"")===String(c.id));
+    const cv=cl.filter(l=>String(l.stage||"")==="viewing").length;
+    const cc=cl.filter(l=>String(l.stage||"")==="closed").length;
+    const rate=cl.length?((cc/cl.length)*100):0;
+    return `<div class="library-item"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>${esc(c.name)}</b><div class="muted mini">${esc(p?.name||"Property")} · ${esc(c.platform||"")} · ${esc(c.objective||"")} · ${ids.length} creative</div></div><span class="tag">${esc(c.status||"draft")}</span></div><div class="row" style="margin-top:8px"><span class="tag">RM ${Number(c.daily_budget||0).toLocaleString("en-MY")}/hari</span><span class="tag">Leads ${cl.length}</span><span class="tag">Viewing ${cv}</span><span class="tag">Closed ${cc}</span><span class="tag">CV ${rate.toFixed(1)}%</span><select onchange="updateCampaignStatus('${esc(c.id)}',this.value)"><option value="draft" ${c.status==="draft"?"selected":""}>Draft</option><option value="ready" ${c.status==="ready"?"selected":""}>Ready</option><option value="running" ${c.status==="running"?"selected":""}>Running</option><option value="paused" ${c.status==="paused"?"selected":""}>Paused</option><option value="completed" ${c.status==="completed"?"selected":""}>Completed</option></select></div></div>`;
   }).join("");
-
   el.innerHTML=intelligence+library;
 }
 function render(){
@@ -262,13 +243,14 @@ function render(){
   mp.innerHTML=propertyOptions;cp.innerHTML=propertyOptions;aip.innerHTML=propertyOptions;
   const campSelect=document.getElementById("campProperty"); if(campSelect){const cur=campSelect.value;campSelect.innerHTML=propertyOptions;if(cur && d.properties.some(p=>String(p.id)===String(cur)))campSelect.value=cur;else if(d.properties[0])campSelect.value=d.properties[0].id; refreshCampaignPreview();}
   renderCampaigns();
+  refreshLeadAttributionOptions();
   if(currentCp && d.properties.some(p=>String(p.id)===String(currentCp)))cp.value=currentCp;
   filterCreativeMedia();
   const currentP=d.properties.find(p=>String(p.id)===String(cp.value))||d.properties[0];
   if(currentP&&!document.getElementById("ch").value)document.getElementById("ch").value=currentP.name||"";
   props.innerHTML=d.properties.map(p=>`<div style="padding:13px;border-bottom:1px solid #2a3955"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1"><b>${esc(p.name)}</b> · ${esc(p.location)} · RM ${Number(p.price||0).toLocaleString("en-MY")}<br><span class="muted">${p.bedrooms||"-"} bed · ${p.bathrooms||"-"} bath · ${esc(p.built_up||"-")} · ${esc(p.tenure||"-")}</span></div><div class="row"><button class="btn" onclick="editProperty('${esc(p.id)}')">✏️ Edit</button><button class="btn" style="border-color:#8b4250" onclick="deleteProperty('${esc(p.id)}')">🗑️ Delete</button></div></div></div>`).join("")||"<p class='muted'>Tiada property.</p>";
   medias.innerHTML=d.media.length?d.media.map(m=>`<div style="padding:10px;border-bottom:1px solid #2a3955">${esc(m.original_name||m.name||"Media")} <span class="tag">${esc(m.tag||"")}</span></div>`).join(""):"<p class='muted'>Tiada media.</p>";
-  let ids={new:"new",contacted:"contacted",viewing:"viewing",closed:"closed"};Object.entries(ids).forEach(([s,id])=>{let a=d.leads.filter(x=>x.stage===s);document.getElementById(id).innerHTML=a.map(l=>`<div class="lead"><b>${esc(l.name)}</b><div class="muted">${esc(l.phone)}</div><select onchange="moveLead('${l.id}',this.value)"><option value="new" ${s=="new"?"selected":""}>New</option><option value="contacted" ${s=="contacted"?"selected":""}>Contacted</option><option value="viewing" ${s=="viewing"?"selected":""}>Viewing</option><option value="closed" ${s=="closed"?"selected":""}>Closed</option></select></div>`).join("")||"<p class='muted'>Kosong</p>"});
+  let ids={new:"new",contacted:"contacted",viewing:"viewing",closed:"closed"};Object.entries(ids).forEach(([s,id])=>{let a=d.leads.filter(x=>x.stage===s);document.getElementById(id).innerHTML=a.map(l=>{const p=d.properties.find(x=>String(x.id)===String(l.property_id));const c=d.campaigns.find(x=>String(x.id)===String(l.campaign_id));const r=d.renders.find(x=>String(x.id)===String(l.creative_id));const b=r?.brief||{};return `<div class="lead"><b>${esc(l.name)}</b><div class="muted">${esc(l.phone)}</div>${p?`<div class="mini muted">🏠 ${esc(p.name)}</div>`:""}${c?`<div class="mini muted">🎯 ${esc(c.name)}</div>`:""}${l.funnel_stage?`<div class="mini muted">${esc(l.funnel_stage)}${r?` · 🎨 ${esc(b.creative_name||b.headline||r.id)}`:""}</div>`:""}<select onchange="moveLead('${l.id}',this.value)"><option value="new" ${s=="new"?"selected":""}>New</option><option value="contacted" ${s=="contacted"?"selected":""}>Contacted</option><option value="viewing" ${s=="viewing"?"selected":""}>Viewing</option><option value="closed" ${s=="closed"?"selected":""}>Closed</option></select></div>`}).join("")||"<p class='muted'>Kosong</p>"});
   renderCreativeLibrary();
 }
 
