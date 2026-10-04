@@ -1,12 +1,13 @@
-PROPERTY SCE MASTER V4.2.0 - Creative Poster patch
+# PROPERTY SCE MASTER V4.3.2
 
-Replace only these files in the existing repository:
-- index.html (repository root)
-- apps/api/package.json
-- apps/api/src/server.mjs
+Bulk Creative Production upgrade.
 
-Do NOT delete or replace apps/api/migration.sql.
+- Generate 9 creatives: Cold/Warm/Hot × 4:5/1:1/9:16
+- Property-linked hero media
+- Funnel-aware headlines
+- PNG rendering in browser
+- One-click ZIP download
+- Existing Download Poster and WhatsApp preserved
+- API health version 4.3.2
 
-After GitHub commit, redeploy both Render services if auto-deploy is disabled.
-Required API environment variables:
-DATABASE_URL, JWT_SECRET, WEB_ORIGIN, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME.
+Deploy the repository root to the frontend service and the `apps/api` service to Render as before. Keep existing production environment variables unchanged.
