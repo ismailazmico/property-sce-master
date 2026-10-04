@@ -81,7 +81,16 @@ async function sync(){
     try{d=JSON.parse(localStorage.getItem(K)||"null")||{properties:[],media:[],leads:[],ai:[],renders:[],campaigns:[]}}catch{}
     return
   }
-  const cachedCampaigns=Array.isArray(d.campaigns)?d.campaigns:[];
+  let cachedCampaigns=Array.isArray(d.campaigns)?d.campaigns:[];
+  // Restore cached campaigns before the API sync. The API may return an empty/partial
+  // campaign list while the campaign data still exists in the browser cache.
+  try{
+    const cachedState=JSON.parse(localStorage.getItem(K)||"null");
+    if(Array.isArray(cachedState?.campaigns)&&cachedState.campaigns.length>cachedCampaigns.length){
+      cachedCampaigns=cachedState.campaigns;
+      d.campaigns=cachedCampaigns;
+    }
+  }catch{}
   try{
     [d.properties,d.media,d.leads]=await Promise.all([api("/api/properties"),api("/api/media"),api("/api/leads")]);
     d.ai=await api("/api/ai/jobs");const liveLeadIds=new Set(d.leads.map(l=>String(l.id)));Object.keys(salesMeta).forEach(id=>{if(!liveLeadIds.has(id))delete salesMeta[id]});saveSales();
@@ -605,11 +614,22 @@ function renderSalesPerformanceIntelligence(){
   const campaignHtml=campaignRows.length?campaignRows.map((x,i)=>`<div class="exec-row"><div><b>${i+1}. ${esc(x.name)}</b><div class="muted mini">${esc(x.status)} · ${x.leads} leads · ${x.won} closed · CV ${pct(x.won,x.leads)}</div></div><div class="row"><span class="tag">Sales ${money(x.sales)}</span><span class="tag">Comm ${money(x.comm)}</span><span class="tag">Budget/lead ${x.leads?money(x.budgetPerLead):'—'}</span></div></div>`).join(''):`<p class="muted mini">Belum ada campaign.</p>`;
   const creativeHtml=creativeRows.length?creativeRows.map((x,i)=>`<div class="exec-row"><div><b>${i+1}. ${esc(x.name)}</b><div class="muted mini">${esc(x.funnel||'')} · ${x.leads} leads · ${x.won} closed · CV ${pct(x.won,x.leads)}</div></div><div class="row"><span class="tag">Sales ${money(x.sales)}</span><span class="tag">Comm ${money(x.comm)}</span></div></div>`).join(''):`<p class="muted mini">Belum ada creative attribution.</p>`;
   const propHtml=propRows.length?propRows.map((x,i)=>`<div class="exec-row"><div><b>${i+1}. ${esc(x.name)}</b><div class="muted mini">${x.won} closed won</div></div><div class="row"><span class="tag">Sales ${money(x.sales)}</span><span class="tag">Comm ${money(x.comm)}</span></div></div>`).join(''):`<p class="muted mini">Belum ada Closed Won property.</p>`;
+  const decision=(kind,x)=>{
+    const leads=Number(x.leads||0),won=Number(x.won||0),cv=leads?won/leads*100:0;
+    if(won>0)return {label:'SCALE',emoji:'🟢',reason:'Sudah menghasilkan Closed Won.'};
+    if(leads>=5&&won===0)return {label:'OPTIMISE',emoji:'🟡',reason:'Lead sudah terkumpul tetapi belum ada Closed Won.'};
+    if(leads>0)return {label:'MAINTAIN',emoji:'🔵',reason:'Ada signal lead tetapi data masih kecil untuk keputusan agresif.'};
+    return {label:'NO DATA',emoji:'⚪',reason:'Belum ada lead yang boleh dinilai.'};
+  };
+  const campaignDecisionRows=campaignRows.slice(0,10).map(x=>({...x,decision:decision('campaign',x)}));
+  const creativeDecisionRows=creativeRows.slice(0,10).map(x=>({...x,decision:decision('creative',x)}));
+  const decisionHtml=(rows)=>rows.length?rows.map((x,i)=>`<div class="exec-row"><div><b>${i+1}. ${esc(x.name)}</b><div class="muted mini">${x.leads} leads · ${x.won} closed · CV ${pct(x.won,x.leads)}</div></div><div style="text-align:right"><span class="tag">${x.decision.emoji} ${x.decision.label}</span><div class="muted mini" style="margin-top:5px">${esc(x.decision.reason)}</div></div></div>`).join(''):`<p class="muted mini">Belum ada data performance.</p>`;
   const bestCampaign=campaignRows.find(x=>x.won>0);
   const signal=bestCampaign?`<span class="tag">🏆 Campaign dengan Closed Won: ${esc(bestCampaign.name)}</span>`:`<span class="tag">ℹ️ Belum ada campaign Closed Won</span>`;
-  el.innerHTML=`<div class="card exec-section"><h2>📈 Sales & Campaign Performance Intelligence · V5.3</h2><p class="muted mini">Analisis berdasarkan attribution CRM, Closed Won, Sale Price dan Commission. Bukan actual ad spend atau ROI.</p><div class="grid" style="margin-top:10px"><div class="card stat">Campaign<b>${campaignRows.length}</b><span class="mini muted">Tracked</span></div><div class="card stat">Campaign Closed<b>${campaignRows.filter(x=>x.won>0).length}</b><span class="mini muted">Ada Closed Won</span></div><div class="card stat">Sales<b>${money(closed.reduce((n,l)=>n+Number(getSaleMeta(l).sale_price||0),0))}</b><span class="mini muted">Closed Won</span></div><div class="card stat">Commission<b>${money(closed.reduce((n,l)=>n+Number(getSaleMeta(l).commission||0),0))}</b><span class="mini muted">Actual commission</span></div></div><div class="row" style="margin-top:10px">${signal}<span class="tag">🧩 Attribution ${attribution.complete}/${attribution.total} complete</span></div></div>
+  el.innerHTML=`<div class="card exec-section"><h2>📈 Sales & Campaign Performance Intelligence · V5.4</h2><p class="muted mini">Analisis berdasarkan attribution CRM, Closed Won, Sale Price dan Commission. Bukan actual ad spend atau ROI.</p><div class="grid" style="margin-top:10px"><div class="card stat">Campaign<b>${campaignRows.length}</b><span class="mini muted">Tracked</span></div><div class="card stat">Campaign Closed<b>${campaignRows.filter(x=>x.won>0).length}</b><span class="mini muted">Ada Closed Won</span></div><div class="card stat">Sales<b>${money(closed.reduce((n,l)=>n+Number(getSaleMeta(l).sale_price||0),0))}</b><span class="mini muted">Closed Won</span></div><div class="card stat">Commission<b>${money(closed.reduce((n,l)=>n+Number(getSaleMeta(l).commission||0),0))}</b><span class="mini muted">Actual commission</span></div></div><div class="row" style="margin-top:10px">${signal}<span class="tag">🧩 Attribution ${attribution.complete}/${attribution.total} complete</span></div></div>
   <div class="grid exec-section"><div class="card"><h2>📢 Campaign Performance</h2><p class="muted mini">Susunan berdasarkan Sales Value, kemudian Closed Won.</p><div class="exec-list">${campaignHtml}</div></div><div class="card"><h2>🎨 Creative Performance</h2><p class="muted mini">Susunan berdasarkan Sales Value daripada attribution.</p><div class="exec-list">${creativeHtml}</div></div></div>
-  <div class="card exec-section"><h2>🏠 Property Performance</h2><p class="muted mini">Property yang menghasilkan Closed Won.</p><div class="exec-list">${propHtml}</div></div>`;
+  <div class="card exec-section"><h2>🏠 Property Performance</h2><p class="muted mini">Property yang menghasilkan Closed Won.</p><div class="exec-list">${propHtml}</div></div>
+  <div class="card exec-section"><h2>🧠 Marketing Decision Intelligence · V5.4</h2><p class="muted mini">Cadangan tindakan berdasarkan attribution, leads dan Closed Won. Bukan keputusan berdasarkan actual ad spend atau ROI.</p><div class="grid"><div class="card"><h3 style="margin-bottom:6px">📢 Campaign Decision</h3><div class="exec-list">${decisionHtml(campaignDecisionRows)}</div></div><div class="card"><h3 style="margin-bottom:6px">🎨 Creative Decision</h3><div class="exec-list">${decisionHtml(creativeDecisionRows)}</div></div></div><div class="card" style="margin-top:10px;background:#0d1627"><b>Rule Engine</b><div class="muted mini" style="margin-top:5px">🟢 SCALE = ada Closed Won · 🟡 OPTIMISE = ≥5 leads tanpa Closed Won · 🔵 MAINTAIN = ada lead tetapi data kecil · ⚪ NO DATA = tiada lead.</div></div></div>`;
 }
 
 function renderExecutiveDashboard(){
