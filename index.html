@@ -979,93 +979,55 @@ function renderBudgetScalingIntelligence(){
   const el=document.getElementById("budgetScalingIntelligence"); if(!el)return;
   const rows=marketingSpendRows();
   const money=moneyRM0;
-  const decisions=rows.map(x=>{
-    const hasSpend=x.spend>0, hasLeads=x.leads>0, hasWon=x.won>0;
-    const roas=hasSpend?x.roas:0;
-    const cpl=x.cpl;
-    const costClose=x.costPerClose;
-    let action="WAIT", emoji="⚪", reason="Belum cukup data untuk cadangan scaling.";
-    let recommended=x.c.daily_budget||0;
-    let multiplier=1;
-    if(hasSpend&&hasWon&&roas>=5){
-      action="SCALE CAREFULLY"; emoji="🟢";
-      multiplier=2;
-      recommended=Math.max(Number(x.c.daily_budget||0),Number(x.c.daily_budget||0)*2);
-      reason="Ada Closed Won dan ROAS ≥ 5x. Naikkan budget secara berperingkat, bukan terus agresif.";
-    }else if(hasSpend&&hasWon&&roas>=2){
-      action="MAINTAIN / SCALE"; emoji="🔵";
-      multiplier=1.5;
-      recommended=Math.max(Number(x.c.daily_budget||0),Number(x.c.daily_budget||0)*1.5);
-      reason="Ada Closed Won dan ROAS positif. Pertimbang kenaikan sederhana sambil pantau conversion.";
-    }else if(x.leads>=5&&x.won===0){
-      action="OPTIMISE"; emoji="🟡";
-      multiplier=1;
-      recommended=Number(x.c.daily_budget||0);
-      reason="Lead sudah terkumpul tetapi belum ada Closed Won. Optimise funnel/creative sebelum tambah budget.";
-    }else if(hasSpend&&x.sales===0){
-      action="HOLD / REVIEW"; emoji="🔴";
-      multiplier=1;
-      recommended=Number(x.c.daily_budget||0);
-      reason="Sudah ada spend tetapi belum ada sales. Semak lead quality, creative dan funnel.";
-    }else if(hasLeads){
-      action="MAINTAIN"; emoji="🔵";
-      multiplier=1;
-      recommended=Number(x.c.daily_budget||0);
-      reason="Ada lead tetapi sample masih kecil. Kumpul lebih banyak data sebelum scaling.";
+  const BUDGET_K="sce6_4_budget_allocation";
+  let meta={}; try{meta=JSON.parse(localStorage.getItem(BUDGET_K)||"{}")||{}}catch{meta={}};
+  const currentDaily=rows.reduce((n,x)=>n+Number(x.c.daily_budget||0),0);
+  const maxPool=Number(meta.max_daily_budget||currentDaily||0);
+  window.setBudgetPool=function(v){meta.max_daily_budget=Math.max(0,Number(v)||0);localStorage.setItem(BUDGET_K,JSON.stringify(meta));render()};
+  const decide=(x)=>{
+    const spend=Number(x.spend||0), leads=Number(x.leads||0), won=Number(x.won||0), roas=Number(x.roas||0);
+    const current=Math.max(0,Number(x.c.daily_budget||0));
+    const confidence=leads>=30?"STRONG DATA":leads>=10?"EARLY DATA":"LOW DATA";
+    let action="WAIT",emoji="⚪",multiplier=1,reason="Belum cukup data untuk menentukan kenaikan budget.";
+    if(!spend){action="INPUT SPEND";emoji="⚪";reason="Masukkan actual spend dahulu sebelum membuat keputusan budget."}
+    else if(won>0 && roas>=5){
+      if(leads>=30){action="SCALE";emoji="🟢";multiplier=2;reason="Closed Won + ROAS ≥ 5x + data kuat. Boleh scale sehingga 2x secara terkawal."}
+      else if(leads>=10){action="SCALE CAREFULLY";emoji="🟢";multiplier=1.5;reason="Closed Won + ROAS ≥ 5x, tetapi sample belum kuat. Naikkan sekitar 1.5x dan kumpul data."}
+      else {action="SCALE CAREFULLY";emoji="🟢";multiplier=1.25;reason="Closed Won + ROAS ≥ 5x tetapi LOW DATA. Naikkan kecil sahaja, maksimum sekitar 1.25x."}
+    }else if(won>0 && roas>=2){
+      if(leads>=30){action="MAINTAIN / SCALE";emoji="🔵";multiplier=1.5;reason="Closed Won + ROAS ≥ 2x dengan data kuat. Pertimbang scale sederhana."}
+      else {action="MAINTAIN";emoji="🔵";multiplier=1;reason="Closed Won tetapi data masih belum cukup kuat untuk scaling agresif."}
+    }else if(leads>=5 && won===0){
+      action="OPTIMISE";emoji="🟡";multiplier=1;reason="Lead sudah terkumpul tetapi belum ada Closed Won. Optimise creative/funnel sebelum tambah budget.";
+    }else if(spend>0 && won===0){
+      action="HOLD / REVIEW";emoji="🔴";multiplier=1;reason="Sudah ada spend tetapi belum ada Closed Won. Review lead quality, creative dan funnel.";
+    }else if(leads>0){
+      action="MAINTAIN";emoji="🔵";multiplier=1;reason="Ada lead tetapi sample masih kecil. Kumpul data sebelum scaling.";
     }
-    const projected30Spend=Number(recommended||0)*30;
-    const projected30Sales=hasSpend&&roas>0?projected30Spend*roas:0;
-    const projected30Comm=hasSpend&&x.spend>0?projected30Spend*(x.commissionReturn||0):0;
-    return {...x,action,emoji,reason,recommended,multiplier,projected30Spend,projected30Sales,projected30Comm,cpl,costClose};
-  });
-
-  const totalCurrent=decisions.reduce((n,x)=>n+Number(x.c.daily_budget||0),0);
-  const totalRecommended=decisions.reduce((n,x)=>n+Number(x.recommended||0),0);
-  const top=decisions[0];
-  const htmlRows=decisions.length?decisions.map((x,i)=>`
-    <div class="exec-row" style="align-items:flex-start">
-      <div style="min-width:0">
-        <b>${i+1}. ${esc(x.c.name||"Campaign")}</b>
-        <div class="muted mini">${x.leads} leads · ${x.won} closed · Sales ${money(x.sales)} · Spend ${money(x.spend)}</div>
-        <div class="muted mini" style="margin-top:3px">ROAS ${x.spend?x.roas.toFixed(2)+"x":"—"} · CPL ${x.spend?money(x.cpl):"—"} · Cost/Close ${x.won?money(x.costClose):"—"}</div>
-        <div class="muted mini" style="margin-top:3px">${esc(x.reason)}</div>
-      </div>
-      <div style="text-align:right;min-width:175px">
-        <span class="tag">${x.emoji} ${x.action}</span>
-        <div class="mini muted" style="margin-top:6px">Daily RM ${Number(x.c.daily_budget||0).toLocaleString("en-MY")}</div>
-        <div class="mini muted">Cadangan RM ${Number(x.recommended||0).toLocaleString("en-MY")}/hari</div>
-        <div class="mini muted">30 hari spend ${money(x.projected30Spend)}</div>
-        <div class="mini muted">Projected sales ${x.projected30Sales?money(x.projected30Sales):"—"}</div>
-      </div>
-    </div>`).join(""):`<p class="muted mini">Belum ada campaign.</p>`;
-
-  el.innerHTML=`<div class="card exec-section">
-    <h2>🚀 Marketing Budget & Scaling Intelligence · V5.6</h2>
-    <p class="muted mini">Cadangan scaling menggunakan actual spend, leads, Closed Won, ROAS dan daily budget campaign. Projection ialah simulasi berasaskan ROAS semasa — bukan jaminan hasil.</p>
-    <div class="grid" style="margin-top:10px">
-      <div class="card stat">Current Daily Budget<b>${money(totalCurrent)}</b><span class="mini muted">Jumlah campaign</span></div>
-      <div class="card stat">Recommended Daily Budget<b>${money(totalRecommended)}</b><span class="mini muted">Berdasarkan rule engine</span></div>
-      <div class="card stat">Budget Increase<b>${money(Math.max(0,totalRecommended-totalCurrent))}</b><span class="mini muted">Jika semua cadangan diterima</span></div>
-      <div class="card stat">Top Action<b>${top?esc(top.action):"—"}</b><span class="mini muted">${top?esc(top.c.name):"Tiada campaign"}</span></div>
-    </div>
-    <div class="card" style="margin-top:10px;background:#0d1627">
-      <b>Scaling Recommendation</b>
-      <div class="exec-list" style="margin-top:6px">${htmlRows}</div>
-    </div>
-    <div class="card" style="margin-top:10px;background:#0d1627">
-      <b>📐 Scaling Guardrails</b>
-      <div class="muted mini" style="margin-top:6px">
-        🟢 SCALE CAREFULLY = Closed Won + ROAS ≥ 5x ·
-        🔵 MAINTAIN / SCALE = Closed Won + ROAS ≥ 2x ·
-        🟡 OPTIMISE = ≥5 leads tanpa Closed Won ·
-        🔴 HOLD / REVIEW = spend ada tetapi sales 0.
-      </div>
-      <div class="muted mini" style="margin-top:6px">
-        Cadangan default maksimum ialah kenaikan berperingkat 1.5x–2x daily budget; sistem tidak terus menggandakan tanpa semakan.
-      </div>
-    </div>
-    <div class="muted mini" style="margin-top:8px">Projection 30 hari hanya dikira apabila actual spend dan ROAS tersedia. Jangan anggap projection sebagai forecast yang dijamin.</div>
-  </div>`;
+    const raw=Math.round(current*multiplier);
+    const recommended=(action==="SCALE"||action==="SCALE CAREFULLY"||action==="MAINTAIN / SCALE")?Math.max(current,raw):current;
+    const increase=Math.max(0,recommended-current);
+    const projectedSpend30=recommended*30;
+    const projectedSales30=spend&&roas>0?projectedSpend30*roas:0;
+    const projectedComm30=spend&&x.commissionReturn>0?projectedSpend30*x.commissionReturn:0;
+    return {...x,confidence,action,emoji,reason,current,recommended,increase,projectedSpend30,projectedSales30,projectedComm30};
+  };
+  const decisions=rows.map(decide);
+  const scaleCandidates=decisions.filter(x=>x.increase>0&&x.spend>0).sort((a,b)=>b.roas-a.roas||b.sales-a.sales);
+  const totalRecommended=decisions.reduce((n,x)=>n+x.recommended,0);
+  const overPool=maxPool>0&&totalRecommended>maxPool;
+  const scaleRows=scaleCandidates.map(x=>({...x,allocated:x.recommended}));
+  if(overPool){
+    const fixed=decisions.filter(x=>!x.increase).reduce((n,x)=>n+x.current,0);
+    const available=Math.max(0,maxPool-fixed);
+    const need=scaleCandidates.reduce((n,x)=>n+x.increase,0);
+    scaleRows.forEach(x=>{x.allocated=Math.round(x.current+(need?available*Math.max(0,x.increase)/need:0));});
+  }
+  const portfolioRecommended=scaleRows.reduce((n,x)=>n+x.allocated,0)+decisions.filter(x=>!x.increase).reduce((n,x)=>n+x.current,0);
+  const top=decisions.slice().sort((a,b)=>(b.roas-a.roas)||(b.won-a.won)||(b.leads-a.leads))[0];
+  const campaignHtml=decisions.length?decisions.map((x,i)=>`<div class="exec-row" style="align-items:flex-start"><div style="min-width:0"><b>${i+1}. ${esc(x.c.name||"Campaign")}</b><div class="muted mini">${x.leads} leads · ${x.won} closed · Spend ${money(x.spend)} · Sales ${money(x.sales)}</div><div class="muted mini" style="margin-top:3px">ROAS ${x.spend?x.roas.toFixed(2)+"x":"—"} · CPL ${x.spend&&x.leads?money(x.cpl):"—"} · ${esc(x.confidence)}</div><div class="muted mini" style="margin-top:3px">${esc(x.reason)}</div></div><div style="text-align:right;min-width:175px"><span class="tag">${x.emoji} ${x.action}</span><div class="mini muted" style="margin-top:6px">Current RM ${x.current.toLocaleString("en-MY")}/hari</div><div class="mini muted">Cadangan RM ${x.recommended.toLocaleString("en-MY")}/hari</div>${x.increase?`<div class="mini" style="margin-top:3px">+RM ${x.increase.toLocaleString("en-MY")}/hari</div>`:""}</div></div>`).join(""):`<p class="muted mini">Belum ada campaign.</p>`;
+  const scaleHtml=scaleRows.length?scaleRows.map((x,i)=>`<div class="exec-row"><div><b>${i+1}. ${esc(x.c.name||"Campaign")}</b><div class="muted mini">${x.emoji} ${esc(x.action)} · ${esc(x.confidence)} · ROAS ${x.roas.toFixed(2)}x</div></div><div style="text-align:right"><b>RM ${x.allocated.toLocaleString("en-MY")}/hari</b><div class="mini muted">Tambah RM ${Math.max(0,x.allocated-x.current).toLocaleString("en-MY")}</div></div></div>`).join(""):`<p class="muted mini">Tiada campaign yang patut dinaikkan budget sekarang.</p>`;
+  el.innerHTML=`<div class="card exec-section"><h2>💡 Marketing Budget Allocation Intelligence · V6.4</h2><p class="muted mini">Menentukan campaign yang patut ditambah, dikekalkan atau dioptimumkan berdasarkan actual spend, leads, Closed Won, ROAS dan sample size. Ini ialah decision support, bukan jaminan hasil.</p><div class="card" style="margin-top:10px;background:#0d1627"><div class="between"><div><b>Portfolio Budget Guardrail</b><div class="muted mini">Had maksimum daily budget portfolio untuk cadangan scaling.</div></div><div class="field" style="min-width:150px"><input type="number" min="0" step="1" value="${maxPool}" onchange="setBudgetPool(this.value)"></div></div><div class="row" style="margin-top:8px"><span class="tag">Current ${money(currentDaily)}/hari</span><span class="tag">Recommended ${money(portfolioRecommended)}/hari</span><span class="tag">${overPool?"⚠️ Guardrail aktif":"✅ Dalam guardrail"}</span></div></div><div class="grid" style="margin-top:10px"><div class="card stat">Top Opportunity<b>${top?esc(top.c.name):"—"}</b><span class="mini muted">${top?`${top.action} · ROAS ${top.roas.toFixed(2)}x`:"Tiada data"}</span></div><div class="card stat">Budget Increase<b>${money(Math.max(0,portfolioRecommended-currentDaily))}</b><span class="mini muted">Tambahan disyorkan / hari</span></div><div class="card stat">Scale Candidates<b>${scaleCandidates.length}</b><span class="mini muted">Campaign dengan kenaikan</span></div><div class="card stat">Data Confidence<b>${decisions.filter(x=>x.confidence==="STRONG DATA").length} strong</b><span class="mini muted">${decisions.filter(x=>x.confidence==="EARLY DATA").length} early · ${decisions.filter(x=>x.confidence==="LOW DATA").length} low</span></div></div><div class="card" style="margin-top:10px;background:#0d1627"><h3>🎯 Recommended Allocation</h3><p class="muted mini">Campaign di bawah ialah yang mempunyai justifikasi terbaik untuk tambahan budget. Jika portfolio cap tidak mencukupi, tambahan diagihkan mengikut strength recommendation.</p><div class="exec-list">${scaleHtml}</div></div><div class="card" style="margin-top:10px;background:#0d1627"><h3>📊 Campaign Budget Decision</h3><div class="exec-list">${campaignHtml}</div></div><div class="card" style="margin-top:10px;background:#0d1627"><b>🛡️ Guardrails</b><div class="muted mini" style="margin-top:6px">LOW DATA (&lt;10 leads) mengehadkan scaling kepada sekitar 1.25x. EARLY DATA (10–29) sekitar 1.5x. STRONG DATA (≥30) boleh mencapai 2x jika Closed Won + ROAS ≥5x. Tiada Closed Won tidak diberi scaling agresif.</div></div></div>`;
 }
 
 function renderSalesPerformanceIntelligence(){
