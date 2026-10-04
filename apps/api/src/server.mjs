@@ -21,7 +21,7 @@ const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*102
 const PORT=process.env.PORT||4000;
 const JWT_SECRET=process.env.JWT_SECRET||"CHANGE_THIS_IN_PRODUCTION";
 const pool=process.env.DATABASE_URL?new pg.Pool({connectionString:process.env.DATABASE_URL,ssl:process.env.DATABASE_URL.includes("render.com")?{rejectUnauthorized:false}:undefined}):null;
-const demo={properties:[],media:[],leads:[],aiJobs:[],renders:[]};
+const demo={properties:[],media:[],leads:[],aiJobs:[],renders:[],campaigns:[]};
 const id=()=>crypto.randomUUID();
 
 const r2Config={
@@ -36,6 +36,25 @@ const safeFileName=(name)=>String(name||"file").replace(/[^a-zA-Z0-9._-]+/g,"-")
 
 async function migrateAndSeed(){
   if(!pool)return;
+  await pool.query(`create table if not exists campaigns (
+    id uuid primary key,
+    workspace_id uuid not null,
+    owner_id uuid,
+    name text not null,
+    property_id uuid,
+    platform text default 'Meta',
+    objective text default 'WhatsApp Leads',
+    funnel text default 'Cold → Warm → Hot',
+    daily_budget numeric default 0,
+    start_date date,
+    end_date date,
+    creative_ids jsonb not null default '[]'::jsonb,
+    notes text default '',
+    status text default 'draft',
+    created_at timestamptz default now(),
+    updated_at timestamptz default now()
+  )`);
+
   const sql=await fs.readFile(path.resolve(process.cwd(),"migration.sql"),"utf8").catch(()=>null);
   if(sql) await pool.query(sql);
   const email=process.env.DEMO_ADMIN_EMAIL||"admin@sce.local";
@@ -63,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.3.2",db,r2:r2Ready()});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.4.0",db,r2:r2Ready()});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -231,7 +250,24 @@ app.post("/api/ai/jobs",auth,async(req,res)=>{const {property,funnel="Cold",audi
 
 app.get("/api/ai/jobs",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from ai_jobs where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.aiJobs.filter(x=>x.workspace_id===req.user.workspace_id));});
 app.post("/api/creative/renders",auth,async(req,res)=>{const render={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,status:"draft",...req.body};if(pool){const r=await pool.query(`insert into creative_renders(id,workspace_id,owner_id,property_id,format,brief,status) values($1,$2,$3,$4,$5,$6,$7) returning *`,[render.id,render.workspace_id,render.owner_id,render.property_id,render.format,JSON.stringify(render.brief||{}),"draft"]);return res.status(201).json(r.rows[0]);}demo.renders.unshift(render);res.status(201).json(render);});
+const campaignSchema=z.object({name:z.string().min(1),property_id:z.string().uuid().nullable().optional(),platform:z.string().optional(),objective:z.string().optional(),funnel:z.string().optional(),daily_budget:z.number().nonnegative().optional(),start_date:z.string().nullable().optional(),end_date:z.string().nullable().optional(),creative_ids:z.array(z.string()).default([]),notes:z.string().optional(),status:z.enum(["draft","ready","running","paused","completed"]).default("draft")});
+app.get("/api/campaigns",auth,async(req,res)=>{
+  if(pool){const r=await pool.query("select * from campaigns where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows)}
+  res.json((demo.campaigns||[]).filter(x=>x.workspace_id===req.user.workspace_id));
+});
+app.post("/api/campaigns",auth,async(req,res)=>{
+  const parsed=campaignSchema.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:parsed.error.flatten()});
+  const c={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,...parsed.data};
+  if(pool){const r=await pool.query(`insert into campaigns(id,workspace_id,owner_id,name,property_id,platform,objective,funnel,daily_budget,start_date,end_date,creative_ids,notes,status) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) returning *`,[c.id,c.workspace_id,c.owner_id,c.name,c.property_id||null,c.platform||"Meta",c.objective||"WhatsApp Leads",c.funnel||"Cold → Warm → Hot",c.daily_budget||0,c.start_date||null,c.end_date||null,JSON.stringify(c.creative_ids||[]),c.notes||"",c.status||"draft"]);return res.status(201).json(r.rows[0])}
+  demo.campaigns=demo.campaigns||[];demo.campaigns.unshift(c);return res.status(201).json(c);
+});
+app.patch("/api/campaigns/:id",auth,async(req,res)=>{
+  const status=req.body?.status?String(req.body.status):null;
+  if(pool){const r=await pool.query("update campaigns set status=coalesce($1,status),updated_at=now() where id=$2 and workspace_id=$3 returning *",[status,req.params.id,req.user.workspace_id]);return r.rowCount?res.json(r.rows[0]):res.sendStatus(404)}
+  const c=(demo.campaigns||[]).find(x=>x.id===req.params.id&&x.workspace_id===req.user.workspace_id);if(!c)return res.sendStatus(404);if(status)c.status=status;res.json(c);
+});
+
 app.get("/api/creative/renders",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from creative_renders where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.renders.filter(x=>x.workspace_id===req.user.workspace_id).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))));});
 app.patch("/api/creative/renders/:id",auth,async(req,res)=>{const status=req.body?.status?String(req.body.status):null;if(pool){const r=await pool.query("update creative_renders set status=coalesce($1,status),brief=coalesce($2,brief) where id=$3 and workspace_id=$4 returning *",[status,req.body?.brief?JSON.stringify(req.body.brief):null,req.params.id,req.user.workspace_id]);return r.rowCount?res.json(r.rows[0]):res.sendStatus(404);}const x=demo.renders.find(a=>a.id===req.params.id&&a.workspace_id===req.user.workspace_id);if(!x)return res.sendStatus(404);if(status)x.status=status;if(req.body?.brief)x.brief=req.body.brief;res.json(x);});
 
-migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.3.0`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.4.0`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
