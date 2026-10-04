@@ -141,11 +141,20 @@ app.post("/api/media/upload",auth,upload.single("file"),async(req,res)=>{
   if(!r2Ready()) return res.status(503).json({error:"R2 object storage belum dikonfigurasi di API"});
   if(!req.file) return res.status(400).json({error:"Sila pilih fail gambar"});
   if(!String(req.file.mimetype||"").startsWith("image/")) return res.status(400).json({error:"Hanya fail gambar dibenarkan"});
+  const propertyId=req.body.property_id||null;
+  const tag=String(req.body.tag||"hero").toLowerCase();
+  if(pool){
+    const dup=await pool.query(`select id,original_name from media where workspace_id=$1 and property_id is not distinct from $2 and lower(coalesce(tag,'hero'))=$3 and original_name=$4 and size_bytes=$5 limit 1`,[req.user.workspace_id,propertyId,tag,req.file.originalname,req.file.size]);
+    if(dup.rows[0]) return res.status(409).json({error:"Media duplicate: gambar yang sama sudah wujud untuk property dan tag ini",media_id:dup.rows[0].id});
+  }else{
+    const dup=demo.media.find(x=>x.workspace_id===req.user.workspace_id&&String(x.property_id||"")===String(propertyId||"")&&String(x.tag||"hero").toLowerCase()===tag&&x.original_name===req.file.originalname&&Number(x.size_bytes||0)===Number(req.file.size||0));
+    if(dup) return res.status(409).json({error:"Media duplicate: gambar yang sama sudah wujud untuk property dan tag ini",media_id:dup.id});
+  }
   const mediaId=id();
   const key=`media/${req.user.workspace_id}/${mediaId}-${safeFileName(req.file.originalname)}`;
   try{
     await r2Client.send(new PutObjectCommand({Bucket:r2Config.bucket,Key:key,Body:req.file.buffer,ContentType:req.file.mimetype,Metadata:{originalname:String(req.file.originalname||"")}}));
-    const m={id:mediaId,workspace_id:req.user.workspace_id,property_id:req.body.property_id||null,storage_key:key,original_name:req.file.originalname,mime_type:req.file.mimetype,size_bytes:req.file.size,tag:req.body.tag||"hero"};
+    const m={id:mediaId,workspace_id:req.user.workspace_id,property_id:propertyId,storage_key:key,original_name:req.file.originalname,mime_type:req.file.mimetype,size_bytes:req.file.size,tag};
     if(pool){
       const r=await pool.query(`insert into media(id,workspace_id,property_id,storage_key,original_name,mime_type,size_bytes,tag) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`,[m.id,m.workspace_id,m.property_id,m.storage_key,m.original_name,m.mime_type,m.size_bytes,m.tag]);
       return res.status(201).json(r.rows[0]);
