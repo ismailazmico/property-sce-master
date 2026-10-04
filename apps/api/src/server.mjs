@@ -63,7 +63,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.2.3",db,r2:r2Ready()});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.3.0",db,r2:r2Ready()});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -122,6 +122,20 @@ app.patch("/api/leads/:id",auth,async(req,res)=>{if(pool){const r=await pool.que
 
 app.get("/api/media",auth,async(req,res)=>{const propertyId=req.query.property_id?String(req.query.property_id):null;if(pool){const r=propertyId?await pool.query("select * from media where workspace_id=$1 and property_id=$2 order by created_at desc",[req.user.workspace_id,propertyId]):await pool.query("select * from media where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.media.filter(x=>x.workspace_id===req.user.workspace_id&&(!propertyId||String(x.property_id)===propertyId)));});
 app.post("/api/media/complete",auth,async(req,res)=>{const m={id:id(),workspace_id:req.user.workspace_id,...req.body};if(pool){const r=await pool.query(`insert into media(id,workspace_id,property_id,storage_key,original_name,mime_type,size_bytes,tag) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`,[m.id,m.workspace_id,m.property_id,m.storage_key,m.original_name,m.mime_type,m.size_bytes,m.tag]);return res.status(201).json(r.rows[0]);}demo.media.unshift(m);res.status(201).json(m);});
+
+app.get("/api/media/:id/file",auth,async(req,res)=>{
+  if(!r2Ready()) return res.status(503).json({error:"R2 object storage belum dikonfigurasi di API"});
+  if(!pool) return res.status(503).json({error:"Media file memerlukan database production"});
+  const r=await pool.query("select storage_key,original_name,mime_type from media where id=$1 and workspace_id=$2 limit 1",[req.params.id,req.user.workspace_id]);
+  if(!r.rowCount)return res.status(404).json({error:"Media tidak dijumpai"});
+  try{
+    const obj=await r2Client.send(new GetObjectCommand({Bucket:r2Config.bucket,Key:r.rows[0].storage_key}));
+    res.setHeader("Content-Type",r.rows[0].mime_type||obj.ContentType||"application/octet-stream");
+    res.setHeader("Content-Disposition",`inline; filename="${safeFileName(r.rows[0].original_name||"media")}"`);
+    if(obj.ContentLength!=null)res.setHeader("Content-Length",String(obj.ContentLength));
+    obj.Body.pipe(res);
+  }catch(err){console.error("R2 media file failed",err);return res.status(502).json({error:"Gagal mendapatkan fail media",detail:err?.message||"Unknown error"});}
+});
 
 app.get("/api/media/:id/url",auth,async(req,res)=>{
   if(!r2Ready()) return res.status(503).json({error:"R2 object storage belum dikonfigurasi di API"});
@@ -217,5 +231,7 @@ app.post("/api/ai/jobs",auth,async(req,res)=>{const {property,funnel="Cold",audi
 
 app.get("/api/ai/jobs",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from ai_jobs where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.aiJobs.filter(x=>x.workspace_id===req.user.workspace_id));});
 app.post("/api/creative/renders",auth,async(req,res)=>{const render={id:id(),workspace_id:req.user.workspace_id,owner_id:req.user.sub,status:"draft",...req.body};if(pool){const r=await pool.query(`insert into creative_renders(id,workspace_id,owner_id,property_id,format,brief,status) values($1,$2,$3,$4,$5,$6,$7) returning *`,[render.id,render.workspace_id,render.owner_id,render.property_id,render.format,JSON.stringify(render.brief||{}),"draft"]);return res.status(201).json(r.rows[0]);}demo.renders.unshift(render);res.status(201).json(render);});
+app.get("/api/creative/renders",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from creative_renders where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.renders.filter(x=>x.workspace_id===req.user.workspace_id).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))));});
+app.patch("/api/creative/renders/:id",auth,async(req,res)=>{const status=req.body?.status?String(req.body.status):null;if(pool){const r=await pool.query("update creative_renders set status=coalesce($1,status),brief=coalesce($2,brief) where id=$3 and workspace_id=$4 returning *",[status,req.body?.brief?JSON.stringify(req.body.brief):null,req.params.id,req.user.workspace_id]);return r.rowCount?res.json(r.rows[0]):res.sendStatus(404);}const x=demo.renders.find(a=>a.id===req.params.id&&a.workspace_id===req.user.workspace_id);if(!x)return res.sendStatus(404);if(status)x.status=status;if(req.body?.brief)x.brief=req.body.brief;res.json(x);});
 
-migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.2.3`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.3.0`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
