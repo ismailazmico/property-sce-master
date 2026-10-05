@@ -1852,7 +1852,7 @@ function followupDueRowsV79(){
   });
   return out.sort((a,b)=>a.due-b.due||b.score.score-a.score.score);
 }
-function renderFollowupDueCenterV79(){
+async function renderFollowupDueCenterV79(){
   const el=document.getElementById("followupDueCenterV79");if(!el)return;
   const rows=followupDueRowsV79(),now=new Date(),todayStart=new Date(now.getFullYear(),now.getMonth(),now.getDate()),tomorrow=new Date(todayStart);tomorrow.setDate(tomorrow.getDate()+1);
   const overdue=rows.filter(x=>x.due<todayStart).length,today=rows.filter(x=>x.due>=todayStart&&x.due<tomorrow).length,upcoming=rows.filter(x=>x.due>=tomorrow).length;
@@ -1863,7 +1863,6 @@ function renderFollowupDueCenterV79(){
     const wa=x.l.phone?("https://wa.me/6"+String(x.l.phone).replace(/\D/g,"").replace(/^6/,"")):"";
     return '<div class="card" style="margin-top:8px;background:#0d1627"><div class="between"><div><b>'+esc(x.l.name||"Lead")+'</b><div class="muted mini">'+esc(getPipeStage(x.l).toUpperCase())+' · '+esc(p?.name||"Property belum dipilih")+'</div></div><span class="tag">'+icon(x)+' '+label(x)+' · Score '+x.score.score+'</span></div><div class="muted mini" style="margin-top:6px">Next: <b>'+esc(x.a.next_followup)+'</b> · '+esc(activityLabelV75(x.a.type))+(x.a.note?' · '+esc(x.a.note):'')+'</div><div class="row" style="margin-top:8px;gap:7px"><button class="btn" onclick="showPage(\'crm\')">Buka Lead CRM</button>'+(wa?'<a class="btn primary" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>':'')+'</div></div>';
   }).join("");
-  let events=[];try{const ev=await api("/api/integrations/events?limit=10");events=Array.isArray(ev?.events)?ev.events:[]}catch{}
   el.innerHTML='<div class="card exec-section"><div class="between"><div><h2>📅 Follow-up Due & Reminder Center · V7.9</h2><p class="muted mini">Senarai next follow-up untuk REAL active lead. Closed Won, Closed Lost, TEST dan ARCHIVED tidak dimasukkan.</p></div><button class="btn primary" onclick="syncLeadActivitiesV77().then(()=>renderFollowupDueCenterV79())">🔄 Refresh Due</button></div><div class="grid3" style="margin-top:10px"><div class="card"><div class="muted mini">OVERDUE</div><div class="big">'+overdue+'</div><div class="muted mini">Perlu tindakan dahulu</div></div><div class="card"><div class="muted mini">TODAY</div><div class="big">'+today+'</div><div class="muted mini">Perlu dibuat hari ini</div></div><div class="card"><div class="muted mini">UPCOMING</div><div class="big">'+upcoming+'</div><div class="muted mini">Akan datang</div></div></div><div style="margin-top:10px"><b>Due Queue · REAL</b>'+(rows.length?cards:'<div class="card" style="margin-top:8px"><p class="muted">Tiada REAL active lead dengan next follow-up. Queue kosong adalah normal jika semua REAL lead sudah Closed Won/Closed Lost.</p></div>')+'</div><div class="card" style="margin-top:10px;background:#0d1627"><b>🔐 Safety Rule V7.9</b><div class="muted mini" style="margin-top:6px">V7.9 hanya membaca activity history dan lead stage untuk menyusun due queue. Ia tidak menukar stage, attribution atau status CRM secara automatik.</div></div></div>';
 }
 
