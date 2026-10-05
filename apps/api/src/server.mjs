@@ -334,46 +334,119 @@ app.get("/api/integrations/status",auth,async(req,res)=>{
   });
 });
 
-app.post("/api/integrations/leads/:provider",async(req,res)=>{
-  const provider=String(req.params.provider||"").toLowerCase();
-  if(!["meta","tiktok"].includes(provider))return res.status(404).json({error:"Provider tidak disokong"});
-  if(!webhookAuthorized(req))return res.status(401).json({error:"Webhook tidak sah atau secret belum dikonfigurasi"});
-  if(!pool||!LEAD_WEBHOOK_WORKSPACE_ID)return res.status(503).json({error:"Lead webhook belum dikonfigurasi di backend"});
+async function ingestNormalizedLead(provider,normalized,payload){
   const workspaceId=LEAD_WEBHOOK_WORKSPACE_ID;
-  const normalized=normalizeInboundLead(req.body,provider);
-  if(!normalized.external_id)return res.status(400).json({error:"external_id/lead_id/id diperlukan untuk deduplication"});
-  if(!normalized.name&&!normalized.phone&&!normalized.email)return res.status(400).json({error:"Sekurang-kurangnya name, phone atau email diperlukan"});
+  if(!pool||!workspaceId)throw Object.assign(new Error("Lead webhook belum dikonfigurasi di backend"),{status:503});
+  if(!normalized.external_id)throw Object.assign(new Error("external_id/lead_id/id diperlukan untuk deduplication"),{status:400});
+  if(!normalized.name&&!normalized.phone&&!normalized.email)throw Object.assign(new Error("Sekurang-kurangnya name, phone atau email diperlukan"),{status:400});
   const ws=await pool.query("select id from workspaces where id=$1 limit 1",[workspaceId]);
-  if(!ws.rowCount)return res.status(500).json({error:"LEAD_WEBHOOK_WORKSPACE_ID tidak sepadan dengan workspace production"});
+  if(!ws.rowCount)throw Object.assign(new Error("LEAD_WEBHOOK_WORKSPACE_ID tidak sepadan dengan workspace production"),{status:500});
   const existing=await pool.query("select id,lead_id from lead_ingestion_events where workspace_id=$1 and provider=$2 and external_id=$3 limit 1",[workspaceId,provider,normalized.external_id]);
-  if(existing.rowCount)return res.json({ok:true,duplicate:true,lead_id:existing.rows[0].lead_id,event_id:existing.rows[0].id});
+  if(existing.rowCount)return {ok:true,duplicate:true,lead_id:existing.rows[0].lead_id,event_id:existing.rows[0].id};
   const validProperty=normalized.property_id?await pool.query("select id from properties where id=$1 and workspace_id=$2 limit 1",[normalized.property_id,workspaceId]):{rowCount:0};
   const propertyId=validProperty.rowCount?normalized.property_id:null;
   const validCampaign=normalized.campaign_id?await pool.query("select id from campaigns where id=$1 and workspace_id=$2 limit 1",[normalized.campaign_id,workspaceId]):{rowCount:0};
   const campaignId=validCampaign.rowCount?normalized.campaign_id:null;
   const validCreative=normalized.creative_id?await pool.query("select id from creative_renders where id=$1 and workspace_id=$2 limit 1",[normalized.creative_id,workspaceId]):{rowCount:0};
   const creativeId=validCreative.rowCount?normalized.creative_id:null;
-  const leadId=id();
-  const client=await pool.connect();
+  const leadId=id(),client=await pool.connect();
   try{
     await client.query("begin");
     const lead=await client.query(`insert into leads(id,workspace_id,property_id,owner_id,name,phone,email,stage,source,notes,campaign_id,creative_id,funnel_stage)
       values($1,$2,$3,(select id from users where workspace_id=$2 and role='admin' order by created_at asc limit 1),$4,$5,$6,'new',$7,$8,$9,$10,$11) returning id,name,phone,email,stage,source,property_id,campaign_id,creative_id,funnel_stage,created_at`,
-      [leadId,workspaceId,propertyId,normalized.name||"Lead",normalized.phone||null,normalized.email||null,normalized.source,normalized.notes, campaignId,creativeId,normalized.funnel_stage]);
-    const event=await client.query("insert into lead_ingestion_events(workspace_id,provider,external_id,lead_id,payload) values($1,$2,$3,$4,$5) returning id",[workspaceId,provider,normalized.external_id,leadId,JSON.stringify(req.body||{})]);
+      [leadId,workspaceId,propertyId,normalized.name||"Lead",normalized.phone||null,normalized.email||null,normalized.source,normalized.notes,campaignId,creativeId,normalized.funnel_stage]);
+    const event=await client.query("insert into lead_ingestion_events(workspace_id,provider,external_id,lead_id,payload) values($1,$2,$3,$4,$5) returning id",[workspaceId,provider,normalized.external_id,leadId,JSON.stringify(payload||{})]);
     await client.query("commit");
-    return res.status(201).json({ok:true,duplicate:false,provider,lead:lead.rows[0],event_id:event.rows[0].id});
+    return {ok:true,duplicate:false,provider,lead:lead.rows[0],event_id:event.rows[0].id};
   }catch(err){
     await client.query("rollback");
     if(String(err?.code)==="23505"){
       const dup=await pool.query("select id,lead_id from lead_ingestion_events where workspace_id=$1 and provider=$2 and external_id=$3 limit 1",[workspaceId,provider,normalized.external_id]);
-      if(dup.rowCount)return res.json({ok:true,duplicate:true,lead_id:dup.rows[0].lead_id,event_id:dup.rows[0].id});
+      if(dup.rowCount)return {ok:true,duplicate:true,lead_id:dup.rows[0].lead_id,event_id:dup.rows[0].id};
     }
-    console.error("Lead ingestion failed",err);
-    return res.status(500).json({error:"Gagal menyimpan lead integration"});
+    throw err;
   }finally{client.release();}
+}
+
+app.post("/api/integrations/leads/:provider",async(req,res)=>{
+  const provider=String(req.params.provider||"").toLowerCase();
+  if(!["meta","tiktok"].includes(provider))return res.status(404).json({error:"Provider tidak disokong"});
+  if(!webhookAuthorized(req))return res.status(401).json({error:"Webhook tidak sah atau secret belum dikonfigurasi"});
+  try{return res.status(201).json(await ingestNormalizedLead(provider,normalizeInboundLead(req.body,provider),req.body||{}));}
+  catch(err){console.error("Lead ingestion failed",err);return res.status(err?.status||500).json({error:err?.message||"Gagal menyimpan lead integration"});}
+}
+
+const META_VERIFY_TOKEN=String(process.env.META_VERIFY_TOKEN||"");
+const META_APP_SECRET=String(process.env.META_APP_SECRET||"");
+const META_PAGE_ACCESS_TOKEN=String(process.env.META_PAGE_ACCESS_TOKEN||"");
+const META_GRAPH_VERSION=String(process.env.META_GRAPH_VERSION||"v24.0");
+
+function metaSignatureValid(req){
+  if(!META_APP_SECRET)return false;
+  const signature=String(req.headers["x-hub-signature-256"]||"");
+  if(!signature.startsWith("sha256="))return false;
+  const expected="sha256="+crypto.createHmac("sha256",META_APP_SECRET).update(JSON.stringify(req.body||{})).digest("hex");
+  const a=Buffer.from(signature),b=Buffer.from(expected);
+  return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+
+function metaFieldMap(fieldData){
+  const out={};
+  for(const item of Array.isArray(fieldData)?fieldData:[]){
+    const key=String(item?.name||"").trim().toLowerCase(),values=Array.isArray(item?.values)?item.values:[];
+    if(key)out[key]=values.length>1?values.join(", "):String(values[0]??"").trim();
+  }
+  return out;
+}
+
+async function fetchMetaLead(leadgenId){
+  if(!META_PAGE_ACCESS_TOKEN)throw Object.assign(new Error("META_PAGE_ACCESS_TOKEN belum dikonfigurasi"),{status:503});
+  const url=`https://graph.facebook.com/${META_GRAPH_VERSION}/${encodeURIComponent(leadgenId)}?fields=id,created_time,field_data,ad_id,adset_id,campaign_id,form_id,page_id&access_token=${encodeURIComponent(META_PAGE_ACCESS_TOKEN)}`;
+  const r=await fetch(url);
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok)throw Object.assign(new Error(j?.error?.message||"Meta Graph API gagal mendapatkan lead"),{status:502});
+  return j;
+}
+
+app.get("/webhooks/meta",async(req,res)=>{
+  const mode=String(req.query["hub.mode"]||"");
+  const token=String(req.query["hub.verify_token"]||"");
+  const challenge=String(req.query["hub.challenge"]||"");
+  if(mode==="subscribe"&&META_VERIFY_TOKEN&&token===META_VERIFY_TOKEN)return res.status(200).send(challenge);
+  return res.sendStatus(403);
 });
 
+app.post("/webhooks/meta",async(req,res)=>{
+  if(!META_APP_SECRET||!metaSignatureValid(req))return res.sendStatus(403);
+  if(!pool||!LEAD_WEBHOOK_WORKSPACE_ID)return res.status(503).json({error:"Meta integration belum dikonfigurasi di backend"});
+  const events=[];
+  for(const entry of Array.isArray(req.body?.entry)?req.body.entry:[]){
+    for(const change of Array.isArray(entry?.changes)?entry.changes:[]){
+      if(change?.field!=="leadgen")continue;
+      const v=change?.value||{};
+      const leadgenId=String(v.leadgen_id||"").trim();
+      if(leadgenId)events.push({leadgenId,pageId:String(v.page_id||entry?.id||""),adId:String(v.ad_id||""),adsetId:String(v.adset_id||""),campaignId:String(v.campaign_id||"")});
+    }
+  }
+  let processed=0,duplicates=0,failed=0;
+  for(const e of events){
+    try{
+      const lead=await fetchMetaLead(e.leadgenId),fields=metaFieldMap(lead.field_data);
+      const normalized=normalizeInboundLead({
+        external_id:e.leadgenId,
+        name:fields.full_name||fields.name||fields.first_name||"",
+        phone:fields.phone_number||fields.phone||fields.whatsapp||"",
+        email:fields.email||"",
+        source:"Meta Lead Ads",
+        funnel_stage:"Cold",
+        notes:`Meta leadgen_id=${e.leadgenId}; page_id=${e.pageId}; ad_id=${e.adId}; adset_id=${e.adsetId}; campaign_id=${e.campaignId}; form_id=${lead.form_id||""}`
+      },"meta");
+      const result=await ingestNormalizedLead("meta",normalized,{meta_webhook:req.body,meta_lead:lead});
+      if(result.duplicate)duplicates++;else processed++;
+    }catch(err){failed++;console.error("Meta lead processing failed",err);}
+  }
+  return res.status(200).json({ok:true,received:events.length,processed,duplicates,failed});
+});
 // V7.8 — CRM Activity History API
 async function ensureCrmActivityTable(){
   if(!pool)return;
