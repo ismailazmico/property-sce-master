@@ -32,6 +32,12 @@ services:
         sync: false
       - key: META_GRAPH_VERSION
         value: v24.0
+      - key: TIKTOK_CLIENT_KEY
+        sync: false
+      - key: TIKTOK_CLIENT_SECRET
+        sync: false
+      - key: TIKTOK_SIGNATURE_MAX_AGE_SECONDS
+        value: "300"
   - type: web
     name: property-sce-master-web
     runtime: static
