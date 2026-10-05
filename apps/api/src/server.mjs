@@ -16,7 +16,7 @@ const app=express();
 app.use(helmet());
 const allowedOrigin=process.env.WEB_ORIGIN||true;
 app.use(cors({origin:allowedOrigin,credentials:false}));
-app.use(express.json({limit:"2mb"}));
+app.use(express.json({limit:"2mb",verify:(req,_res,buf)=>{req.rawBody=Buffer.from(buf);}}));
 const upload=multer({storage:multer.memoryStorage(),limits:{fileSize:10*1024*1024}});
 const PORT=process.env.PORT||4000;
 const JWT_SECRET=process.env.JWT_SECRET||"CHANGE_THIS_IN_PRODUCTION";
@@ -82,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"8.9",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db)});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.0.1",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db)});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -385,7 +385,8 @@ function metaSignatureValid(req){
   if(!META_APP_SECRET)return false;
   const signature=String(req.headers["x-hub-signature-256"]||"");
   if(!signature.startsWith("sha256="))return false;
-  const expected="sha256="+crypto.createHmac("sha256",META_APP_SECRET).update(JSON.stringify(req.body||{})).digest("hex");
+  const raw=Buffer.isBuffer(req.rawBody)?req.rawBody:Buffer.from(JSON.stringify(req.body||{}));
+  const expected="sha256="+crypto.createHmac("sha256",META_APP_SECRET).update(raw).digest("hex");
   const a=Buffer.from(signature),b=Buffer.from(expected);
   return a.length===b.length&&crypto.timingSafeEqual(a,b);
 }
@@ -491,4 +492,4 @@ app.delete("/api/leads/:id/activities/:activityId",auth,async(req,res)=>{
   return res.json({ok:true,id:req.params.activityId});
 });
 
-migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V7.8`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V9.0.1`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
