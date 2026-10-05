@@ -404,7 +404,7 @@ app.post("/api/integrations/leads/:provider",async(req,res)=>{
   if(!webhookAuthorized(req))return res.status(401).json({error:"Webhook tidak sah atau secret belum dikonfigurasi"});
   try{return res.status(201).json(await ingestNormalizedLead(provider,normalizeInboundLead(req.body,provider),req.body||{}));}
   catch(err){console.error("Lead ingestion failed",err);return res.status(err?.status||500).json({error:err?.message||"Gagal menyimpan lead integration"});}
-}
+});
 
 const META_VERIFY_TOKEN=String(process.env.META_VERIFY_TOKEN||"");
 const META_APP_SECRET=String(process.env.META_APP_SECRET||"");
