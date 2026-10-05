@@ -324,6 +324,7 @@ app.get("/api/integrations/status",auth,async(req,res)=>{
   res.json({
     ok:true,
     version:"V8.9",
+    workspace_id:String(req.user.workspace_id),
     database:dbOk,
     normalizedLeadWebhook:workspaceOk&&secretOk&&dbOk,
     meta:{configured:workspaceOk&&secretOk&&dbOk,mode:"webhook_bridge_ready"},
