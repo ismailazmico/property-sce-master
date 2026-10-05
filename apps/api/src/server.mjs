@@ -426,7 +426,7 @@ function tiktokSignatureValid(req){
   const parts={};
   for(const item of header.split(",")){const [k,...rest]=item.trim().split("=");if(k&&rest.length)parts[k]=rest.join("=");}
   const timestamp=String(parts.t||"").trim(),signature=String(parts.s||"").trim();
-  if(!/^\\d+$/.test(timestamp)||!/^[a-f0-9]{64}$/i.test(signature))return false;
+  if(!/^\d+$/.test(timestamp)||!/^[a-f0-9]{64}$/i.test(signature))return false;
   const age=Math.abs(Math.floor(Date.now()/1000)-Number(timestamp));
   if(age>TIKTOK_SIGNATURE_MAX_AGE_SECONDS)return false;
   const raw=Buffer.isBuffer(req.rawBody)?req.rawBody:Buffer.from(JSON.stringify(req.body||{}));
