@@ -270,4 +270,50 @@ app.patch("/api/campaigns/:id",auth,async(req,res)=>{
 app.get("/api/creative/renders",auth,async(req,res)=>{if(pool){const r=await pool.query("select * from creative_renders where workspace_id=$1 order by created_at desc",[req.user.workspace_id]);return res.json(r.rows);}res.json(demo.renders.filter(x=>x.workspace_id===req.user.workspace_id).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))));});
 app.patch("/api/creative/renders/:id",auth,async(req,res)=>{const status=req.body?.status?String(req.body.status):null;if(pool){const r=await pool.query("update creative_renders set status=coalesce($1,status),brief=coalesce($2,brief) where id=$3 and workspace_id=$4 returning *",[status,req.body?.brief?JSON.stringify(req.body.brief):null,req.params.id,req.user.workspace_id]);return r.rowCount?res.json(r.rows[0]):res.sendStatus(404);}const x=demo.renders.find(a=>a.id===req.params.id&&a.workspace_id===req.user.workspace_id);if(!x)return res.sendStatus(404);if(status)x.status=status;if(req.body?.brief)x.brief=req.body.brief;res.json(x);});
 
-migrateAndSeed().then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V4.4.0`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+
+
+// V7.8 — CRM Activity History API
+async function ensureCrmActivityTable(){
+  if(!pool)return;
+  await pool.query(`create table if not exists crm_activities(
+    id uuid primary key default gen_random_uuid(),
+    workspace_id uuid not null references workspaces(id) on delete cascade,
+    lead_id uuid not null references leads(id) on delete cascade,
+    actor_id uuid references users(id),
+    type text not null,
+    note text default '',
+    next_followup text default '',
+    occurred_at timestamptz not null default now(),
+    created_at timestamptz not null default now()
+  )`);
+  await pool.query("create index if not exists crm_activities_lead_idx on crm_activities(workspace_id,lead_id,occurred_at desc)");
+}
+app.get("/api/leads/:id/activities",auth,async(req,res)=>{
+  if(!pool)return res.json([]);
+  const lead=await pool.query("select id from leads where id=$1 and workspace_id=$2 limit 1",[req.params.id,req.user.workspace_id]);
+  if(!lead.rowCount)return res.status(404).json({error:"Lead tidak dijumpai"});
+  const r=await pool.query("select id,lead_id,type,note,next_followup,occurred_at,created_at from crm_activities where lead_id=$1 and workspace_id=$2 order by occurred_at desc",[req.params.id,req.user.workspace_id]);
+  return res.json(r.rows);
+});
+app.post("/api/leads/:id/activities",auth,async(req,res)=>{
+  if(!pool)return res.status(503).json({error:"CRM activity backend memerlukan database production"});
+  const lead=await pool.query("select id from leads where id=$1 and workspace_id=$2 limit 1",[req.params.id,req.user.workspace_id]);
+  if(!lead.rowCount)return res.status(404).json({error:"Lead tidak dijumpai"});
+  const type=String(req.body?.type||"").trim();
+  if(!/^[a-zA-Z0-9_-]{1,40}$/.test(type))return res.status(400).json({error:"Activity type tidak sah"});
+  const note=String(req.body?.note||"").trim().slice(0,2000);
+  const nextFollowup=String(req.body?.next_followup||"").trim().slice(0,120);
+  const occurred=String(req.body?.occurred_at||"").trim();
+  const occurredAt=occurred?new Date(occurred):new Date();
+  if(Number.isNaN(occurredAt.getTime()))return res.status(400).json({error:"occurred_at tidak sah"});
+  const r=await pool.query("insert into crm_activities(workspace_id,lead_id,actor_id,type,note,next_followup,occurred_at) values($1,$2,$3,$4,$5,$6,$7) returning id,lead_id,type,note,next_followup,occurred_at,created_at",[req.user.workspace_id,req.params.id,req.user.sub,type,note,nextFollowup,occurredAt]);
+  return res.status(201).json(r.rows[0]);
+});
+app.delete("/api/leads/:id/activities/:activityId",auth,async(req,res)=>{
+  if(!pool)return res.status(503).json({error:"CRM activity backend memerlukan database production"});
+  const r=await pool.query("delete from crm_activities where id=$1 and lead_id=$2 and workspace_id=$3 returning id",[req.params.activityId,req.params.id,req.user.workspace_id]);
+  if(!r.rowCount)return res.status(404).json({error:"Activity tidak dijumpai"});
+  return res.json({ok:true,id:req.params.activityId});
+});
+
+migrateAndSeed().then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V7.8`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
