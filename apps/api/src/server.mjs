@@ -82,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"8.9",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"8.9",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db)});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -323,14 +323,14 @@ app.get("/api/integrations/status",auth,async(req,res)=>{
   let dbOk=Boolean(pool);
   res.json({
     ok:true,
-    version:"V8.9",
+    version:"V9.0",
     workspace_id:String(req.user.workspace_id),
     database:dbOk,
     normalizedLeadWebhook:workspaceOk&&secretOk&&dbOk,
-    meta:{configured:workspaceOk&&secretOk&&dbOk,mode:"webhook_bridge_ready"},
+    meta:{configured:workspaceOk&&secretOk&&dbOk&&Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN),mode:"meta_lead_ads_webhook"},
     tiktok:{configured:workspaceOk&&secretOk&&dbOk,mode:"webhook_bridge_ready"},
     endpoint:workspaceOk&&secretOk?"/api/integrations/leads/{meta|tiktok}":null,
-    requirements:["LEAD_WEBHOOK_SECRET","LEAD_WEBHOOK_WORKSPACE_ID","DATABASE_URL"]
+    requirements:["LEAD_WEBHOOK_SECRET","LEAD_WEBHOOK_WORKSPACE_ID","DATABASE_URL","META_VERIFY_TOKEN","META_APP_SECRET","META_PAGE_ACCESS_TOKEN"]
   });
 });
 
