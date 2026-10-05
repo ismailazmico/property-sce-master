@@ -1937,7 +1937,7 @@ function renderConversionHealthV82(){
 function renderTargetGapPlannerV83(){
   const el=document.getElementById("targetGapPlannerV83");if(!el)return;
   const rows=typeof getReportRows==="function"?getReportRows():[];
-  const sales=rows.reduce((n,r)=>n+Number(r.sale_value||r.sale_price||0),0), commission=rows.reduce((n,r)=>n+Number(r.commission_amount||r.commission||0),0);
+  const sales=rows.reduce((n,r)=>n+Number(r.sale||0),0), commission=rows.reduce((n,r)=>n+Number(r.commission||0),0);
   const salesTarget=1000000, commissionTarget=30000, salesGap=Math.max(0,salesTarget-sales), commissionGap=Math.max(0,commissionTarget-commission);
   const avgSale=rows.length?sales/rows.length:0, avgComm=rows.length?commission/rows.length:0;
   const neededSales=avgSale?Math.ceil(salesGap/avgSale):0, neededComm=avgComm?Math.ceil(commissionGap/avgComm):0;
