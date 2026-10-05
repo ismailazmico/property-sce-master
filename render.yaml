@@ -20,6 +20,10 @@ services:
         value: admin@sce.local
       - key: DEMO_ADMIN_PASSWORD
         sync: false
+      - key: LEAD_WEBHOOK_SECRET
+        sync: false
+      - key: LEAD_WEBHOOK_WORKSPACE_ID
+        sync: false
   - type: web
     name: property-sce-master-web
     runtime: static
