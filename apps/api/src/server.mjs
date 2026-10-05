@@ -82,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"4.4.0",db,r2:r2Ready()});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"8.9",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -272,6 +272,107 @@ app.patch("/api/creative/renders/:id",auth,async(req,res)=>{const status=req.bod
 
 
 
+
+const LEAD_WEBHOOK_SECRET=String(process.env.LEAD_WEBHOOK_SECRET||"");
+const LEAD_WEBHOOK_WORKSPACE_ID=String(process.env.LEAD_WEBHOOK_WORKSPACE_ID||"");
+
+async function ensureLeadIngestionTable(){
+  if(!pool)return;
+  await pool.query(`create table if not exists lead_ingestion_events(
+    id uuid primary key default gen_random_uuid(),
+    workspace_id uuid not null references workspaces(id) on delete cascade,
+    provider text not null,
+    external_id text not null,
+    lead_id uuid references leads(id) on delete set null,
+    payload jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default now(),
+    unique(workspace_id,provider,external_id)
+  )`);
+  await pool.query("create index if not exists lead_ingestion_provider_idx on lead_ingestion_events(workspace_id,provider,created_at desc)");
+}
+
+function webhookAuthorized(req){
+  if(!LEAD_WEBHOOK_SECRET)return false;
+  const supplied=String(req.headers["x-sce-webhook-secret"]||"");
+  const a=Buffer.from(supplied),b=Buffer.from(LEAD_WEBHOOK_SECRET);
+  return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+
+function normalizeInboundLead(body,provider){
+  const b=body&&typeof body==="object"?body:{};
+  const fields=b.fields&&typeof b.fields==="object"?b.fields:{};
+  const data=b.data&&typeof b.data==="object"?b.data:{};
+  const source=b.source||`\${provider}_lead`;
+  return {
+    external_id:String(b.external_id||b.lead_id||b.id||data.external_id||data.lead_id||data.id||"").trim(),
+    name:String(b.name||b.full_name||fields.name||fields.full_name||data.name||"").trim().slice(0,200),
+    phone:String(b.phone||b.whatsapp||fields.phone||fields.whatsapp||data.phone||data.whatsapp||"").trim().slice(0,80),
+    email:String(b.email||fields.email||data.email||"").trim().slice(0,200),
+    property_id:b.property_id||null,
+    campaign_id:b.campaign_id||null,
+    creative_id:b.creative_id||null,
+    funnel_stage:String(b.funnel_stage||"Cold").slice(0,80),
+    source:String(source).slice(0,100),
+    notes:String(b.notes||"").trim().slice(0,2000)
+  };
+}
+
+app.get("/api/integrations/status",auth,async(req,res)=>{
+  let workspaceOk=Boolean(LEAD_WEBHOOK_WORKSPACE_ID&&LEAD_WEBHOOK_WORKSPACE_ID===String(req.user.workspace_id));
+  let secretOk=Boolean(LEAD_WEBHOOK_SECRET);
+  let dbOk=Boolean(pool);
+  res.json({
+    ok:true,
+    version:"V8.9",
+    database:dbOk,
+    normalizedLeadWebhook:workspaceOk&&secretOk&&dbOk,
+    meta:{configured:workspaceOk&&secretOk&&dbOk,mode:"webhook_bridge_ready"},
+    tiktok:{configured:workspaceOk&&secretOk&&dbOk,mode:"webhook_bridge_ready"},
+    endpoint:workspaceOk&&secretOk?"/api/integrations/leads/{meta|tiktok}":null,
+    requirements:["LEAD_WEBHOOK_SECRET","LEAD_WEBHOOK_WORKSPACE_ID","DATABASE_URL"]
+  });
+});
+
+app.post("/api/integrations/leads/:provider",async(req,res)=>{
+  const provider=String(req.params.provider||"").toLowerCase();
+  if(!["meta","tiktok"].includes(provider))return res.status(404).json({error:"Provider tidak disokong"});
+  if(!webhookAuthorized(req))return res.status(401).json({error:"Webhook tidak sah atau secret belum dikonfigurasi"});
+  if(!pool||!LEAD_WEBHOOK_WORKSPACE_ID)return res.status(503).json({error:"Lead webhook belum dikonfigurasi di backend"});
+  const workspaceId=LEAD_WEBHOOK_WORKSPACE_ID;
+  const normalized=normalizeInboundLead(req.body,provider);
+  if(!normalized.external_id)return res.status(400).json({error:"external_id/lead_id/id diperlukan untuk deduplication"});
+  if(!normalized.name&&!normalized.phone&&!normalized.email)return res.status(400).json({error:"Sekurang-kurangnya name, phone atau email diperlukan"});
+  const ws=await pool.query("select id from workspaces where id=$1 limit 1",[workspaceId]);
+  if(!ws.rowCount)return res.status(500).json({error:"LEAD_WEBHOOK_WORKSPACE_ID tidak sepadan dengan workspace production"});
+  const existing=await pool.query("select id,lead_id from lead_ingestion_events where workspace_id=$1 and provider=$2 and external_id=$3 limit 1",[workspaceId,provider,normalized.external_id]);
+  if(existing.rowCount)return res.json({ok:true,duplicate:true,lead_id:existing.rows[0].lead_id,event_id:existing.rows[0].id});
+  const validProperty=normalized.property_id?await pool.query("select id from properties where id=$1 and workspace_id=$2 limit 1",[normalized.property_id,workspaceId]):{rowCount:0};
+  const propertyId=validProperty.rowCount?normalized.property_id:null;
+  const validCampaign=normalized.campaign_id?await pool.query("select id from campaigns where id=$1 and workspace_id=$2 limit 1",[normalized.campaign_id,workspaceId]):{rowCount:0};
+  const campaignId=validCampaign.rowCount?normalized.campaign_id:null;
+  const validCreative=normalized.creative_id?await pool.query("select id from creative_renders where id=$1 and workspace_id=$2 limit 1",[normalized.creative_id,workspaceId]):{rowCount:0};
+  const creativeId=validCreative.rowCount?normalized.creative_id:null;
+  const leadId=id();
+  const client=await pool.connect();
+  try{
+    await client.query("begin");
+    const lead=await client.query(`insert into leads(id,workspace_id,property_id,owner_id,name,phone,email,stage,source,notes,campaign_id,creative_id,funnel_stage)
+      values($1,$2,$3,(select id from users where workspace_id=$2 and role='admin' order by created_at asc limit 1),$4,$5,$6,'new',$7,$8,$9,$10,$11) returning id,name,phone,email,stage,source,property_id,campaign_id,creative_id,funnel_stage,created_at`,
+      [leadId,workspaceId,propertyId,normalized.name||"Lead",normalized.phone||null,normalized.email||null,normalized.source,normalized.notes, campaignId,creativeId,normalized.funnel_stage]);
+    const event=await client.query("insert into lead_ingestion_events(workspace_id,provider,external_id,lead_id,payload) values($1,$2,$3,$4,$5) returning id",[workspaceId,provider,normalized.external_id,leadId,JSON.stringify(req.body||{})]);
+    await client.query("commit");
+    return res.status(201).json({ok:true,duplicate:false,provider,lead:lead.rows[0],event_id:event.rows[0].id});
+  }catch(err){
+    await client.query("rollback");
+    if(String(err?.code)==="23505"){
+      const dup=await pool.query("select id,lead_id from lead_ingestion_events where workspace_id=$1 and provider=$2 and external_id=$3 limit 1",[workspaceId,provider,normalized.external_id]);
+      if(dup.rowCount)return res.json({ok:true,duplicate:true,lead_id:dup.rows[0].lead_id,event_id:dup.rows[0].id});
+    }
+    console.error("Lead ingestion failed",err);
+    return res.status(500).json({error:"Gagal menyimpan lead integration"});
+  }finally{client.release();}
+});
+
 // V7.8 — CRM Activity History API
 async function ensureCrmActivityTable(){
   if(!pool)return;
@@ -316,4 +417,4 @@ app.delete("/api/leads/:id/activities/:activityId",auth,async(req,res)=>{
   return res.json({ok:true,id:req.params.activityId});
 });
 
-migrateAndSeed().then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V7.8`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V7.8`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
