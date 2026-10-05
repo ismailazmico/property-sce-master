@@ -339,7 +339,7 @@ app.get("/api/integrations/status",auth,async(req,res)=>{
   let dbOk=Boolean(pool);
   res.json({
     ok:true,
-    version:"V9.1",
+    version:"V9.2",
     workspace_id:String(req.user.workspace_id),
     database:dbOk,
     normalizedLeadWebhook:workspaceOk&&secretOk&&dbOk,
