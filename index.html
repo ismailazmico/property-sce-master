@@ -5,10 +5,11 @@
 .forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.forecast-box{background:#0f1829;border:1px solid var(--l);border-radius:12px;padding:12px}.forecast-box b{display:block;font-size:24px;margin-top:5px}.forecast-settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.forecast-settings input{width:100%;padding:9px;background:#0a1322;border:1px solid var(--l);border-radius:9px;color:#fff}.forecast-label{font-size:11px;color:var(--m);display:block;margin-bottom:4px}.target-track{height:8px;background:#0a1322;border-radius:99px;overflow:hidden;margin-top:8px}.target-fill{height:100%;background:var(--a);border-radius:99px}@media(max-width:900px){.forecast-grid{grid-template-columns:repeat(2,1fr)}.forecast-settings{grid-template-columns:1fr 1fr}}@media(max-width:650px){.forecast-grid,.forecast-settings{grid-template-columns:1fr}}
 </style></head><body>
 <div class="app"><aside class="side"><div class="brand">PROPERTY <span>SCE</span> MASTER</div><nav id="nav"><button class="active" data-p="dashboard">⌂ Dashboard</button><button data-p="spend">💰 Spend Ledger</button><button data-p="pl">📊 Marketing P&amp;L</button><button data-p="properties">▣ Properties</button><button data-p="media">▧ Media</button><button data-p="leads">♙ Leads CRM</button><button data-p="ai">✦ AI Engine</button><button data-p="creative">◈ Creative</button><button data-p="campaigns">◉ Campaigns</button><button data-p="settings">⚙ Settings</button></nav></aside>
-<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V7.1</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
+<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V7.2</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
 <section id="dashboard" class="page active"><div class="hero"><h2>Property Marketing Operating System</h2><p class="muted">Satu sistem untuk property facts, AI ads, creative, leads, campaign dan sales pipeline & sales management.</p></div><div id="executiveDashboard" style="margin-top:13px"></div><div id="salesPerformanceIntelligence"></div><div id="marketingSpendIntelligence"></div><div id="budgetScalingIntelligence"></div><div id="creativeFunnelIntelligence" style="margin-top:13px"></div><div id="campaignCreativeProfitability" style="margin-top:13px"></div><div id="budgetAllocationScaling" style="margin-top:13px"></div><div id="scalingScenarioSimulator" style="margin-top:13px"></div><div id="forecastConfidenceGuardrails"></div>
 <div id="kpiCommandCenter" style="margin-top:13px"></div>
 <div id="managementActionCenter" style="margin-top:13px"></div>
+<div id="leadConversionIntelligence" style="margin-top:13px"></div>
 <div id="executiveReportCenter" style="margin-top:13px"></div>
 <div id="reportingIntelligence"></div><div id="marketingPLDashboard"></div><div id="monthlySalesReport"></div><div id="salesForecast"></div></section>
 <section id="spend" class="page"><div class="between"><div><h2>Marketing Spend Ledger <span class="tag">V6.2</span></h2><p class="muted">Rekod actual Meta/TikTok spend mengikut tarikh dan campaign. Jumlah ledger menjadi sumber kiraan Actual Spend.</p></div><button class="btn primary" onclick="addSpendEntry()">＋ Add Spend</button></div><div class="card" style="margin-top:12px"><div class="form"><div class="field"><label>Campaign</label><select id="spendCampaign"></select></div><div class="field"><label>Tarikh</label><input id="spendDate" type="date"></div><div class="field"><label>Platform</label><select id="spendPlatform"><option>Meta</option><option>TikTok</option><option>Other</option></select></div><div class="field"><label>Amount (RM)</label><input id="spendAmount" type="number" min="0" step="0.01" placeholder="Contoh: 40"></div><div class="field" style="grid-column:1/-1"><label>Nota</label><input id="spendNote" placeholder="Contoh: Meta Ads 4 Okt"></div></div><div class="row" style="margin-top:11px"><button class="btn primary" onclick="addSpendEntry()">Simpan Spend</button><button class="btn" onclick="exportSpendLedgerCSV()">⬇️ Export Spend CSV</button></div></div><div class="grid" style="margin-top:12px"><div class="card stat">Total Spend<b id="spendLedgerTotal">RM 0</b><span class="mini muted">Semua campaign</span></div><div class="card stat">Entries<b id="spendLedgerCount">0</b><span class="mini muted">Rekod spend</span></div></div><div class="card" style="margin-top:12px"><div id="spendLedgerList"></div></div></section>
@@ -872,7 +873,7 @@ function renderKPICommandCenter(){
   el.innerHTML=`<div class="card exec-section">
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
       <div>
-        <h2>🎯 Management Command Center · V7.1</h2>
+        <h2>🎯 Management Command Center · V7.2</h2>
         <p class="muted mini">Satu paparan keputusan untuk Marketing → Leads → Campaign → Creative → Sales → Commission.</p>
       </div>
       <span class="tag">${healthEmoji} ${healthState}</span>
@@ -1494,7 +1495,7 @@ function renderManagementActionCenter(){
   const badge=p=>p==="HIGH"?"🔴 HIGH":p==="MEDIUM"?"🟡 MEDIUM":"🟢 LOW";
   el.innerHTML=`<div class="card exec-section">
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
-      <div><h2>⚡ Management Action Center · V7.1</h2><p class="muted mini">Daripada KPI kepada tindakan: susun keutamaan kerja berdasarkan data semasa.</p></div>
+      <div><h2>⚡ Management Action Center · V7.2</h2><p class="muted mini">Daripada KPI kepada tindakan: susun keutamaan kerja berdasarkan data semasa.</p></div>
       <span class="tag">${actions.length} action</span>
     </div>
     <div class="exec-list" style="margin-top:10px">
@@ -1513,6 +1514,50 @@ function renderManagementActionCenter(){
   </div>`;
 }
 
+function renderLeadConversionIntelligence(){
+  const el=document.getElementById("leadConversionIntelligence"); if(!el)return;
+  const leads=Array.isArray(d.leads)?d.leads:[];
+  const stage=l=>getPipeStage(l);
+  const labels={new:"NEW",contacted:"CONTACTED",qualified:"QUALIFIED",viewing:"VIEWING",negotiation:"NEGOTIATION",booking:"BOOKING",closed_won:"CLOSED WON",closed_lost:"CLOSED LOST"};
+  const priority={new:1,contacted:1,qualified:1,negotiation:1,booking:1,viewing:2};
+  const action={new:"Hubungi lead & cuba tetapkan Viewing",contacted:"Follow-up semula & tetapkan next step",qualified:"Push kepada Viewing",viewing:"Follow-up selepas viewing",negotiation:"Fokus closing / negotiation",booking:"Follow-up dokumen & closing"};
+  const active=leads.filter(l=>!['closed_won','closed_lost'].includes(stage(l)));
+  const counts={}; Object.keys(labels).forEach(k=>counts[k]=leads.filter(l=>stage(l)===k).length);
+  const needsViewing=active.filter(l=>['new','contacted','qualified'].includes(stage(l)));
+  const attributionIncomplete=active.filter(l=>!l.property_id || (!l.campaign_id && !l.creative_id));
+  const ordered=active.slice().sort((a,b)=>{
+    const pa=priority[stage(a)]||9,pb=priority[stage(b)]||9;
+    if(pa!==pb)return pa-pb;
+    const aa=String(a.updated_at||a.created_at||a.createdAt||""),bb=String(b.updated_at||b.created_at||b.createdAt||"");
+    return bb.localeCompare(aa);
+  });
+  const shown=ordered.slice(0,10);
+  const whatsapp=l=>{
+    const raw=String(l.phone||l.whatsapp||"").replace(/[^0-9]/g,""); if(!raw)return "";
+    const num=raw.startsWith("0")?"60"+raw.slice(1):raw;
+    const p=d.properties.find(x=>String(x.id)===String(l.property_id));
+    const msg=`Assalamualaikum, saya Ismail dari AZM1 Real Estate Agency. Saya follow-up berkaitan ${p?.name||"property"}. Boleh saya bantu untuk langkah seterusnya?`;
+    return `https://wa.me/${num}?text=${encodeURIComponent(msg)}`;
+  };
+  const badge=st=>['new','contacted','qualified','negotiation','booking'].includes(st)?`<span class="tag">🔴 PRIORITY</span>`:`<span class="tag">🟡 FOLLOW-UP</span>`;
+  el.innerHTML=`<div class="card exec-section">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div><h2>📞 Lead Conversion Intelligence · V7.2</h2><p class="muted mini">Queue follow-up berdasarkan pipeline sebenar. Sistem tidak meneka niat lead; keutamaan hanya berdasarkan stage dan data CRM.</p></div>
+      <span class="tag">${needsViewing.length} perlu push Viewing</span>
+    </div>
+    <div class="grid3" style="margin-top:10px">
+      <div class="card"><div class="muted mini">Active Leads</div><div class="big">${active.length}</div><div class="muted mini">Tidak termasuk Closed</div></div>
+      <div class="card"><div class="muted mini">Perlu Viewing</div><div class="big">${needsViewing.length}</div><div class="muted mini">New + Contacted + Qualified</div></div>
+      <div class="card"><div class="muted mini">Attribution Pending</div><div class="big">${attributionIncomplete.length}</div><div class="muted mini">Property/Campaign/Creative perlu semak</div></div>
+    </div>
+    <div class="card" style="margin-top:10px;background:#0d1627"><b>Pipeline Conversion</b><div class="muted mini" style="margin-top:6px">New ${counts.new||0} · Contacted ${counts.contacted||0} · Qualified ${counts.qualified||0} · Viewing ${counts.viewing||0} · Booking ${counts.booking||0} · Closed Won ${counts.closed_won||0}</div></div>
+    <div style="margin-top:10px"><b>Follow-up Queue</b>
+      ${shown.length?shown.map((l,i)=>{const st=stage(l),p=d.properties.find(x=>String(x.id)===String(l.property_id)),wa=whatsapp(l);return `<div class="card" style="margin-top:8px;background:#0d1627"><div class="row" style="justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>${i+1}. ${esc(l.name||"Lead")}</b>${badge(st)}</div><div class="muted mini" style="margin-top:5px">${esc(labels[st]||st)} · ${esc(p?.name||"Property belum dipilih")}${l.phone?` · ${esc(l.phone)}`:""}</div><div class="muted mini" style="margin-top:5px">Cadangan: ${esc(action[st]||"Follow-up dan tetapkan next step")}</div><div class="row" style="margin-top:8px;gap:7px;flex-wrap:wrap"><button class="btn" onclick="showPage('crm')">Buka Lead CRM</button>${wa?`<a class="btn primary" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>`:""}</div></div>`}).join(""):"<div class='card' style='margin-top:8px'><p class='muted'>Tiada active lead untuk follow-up.</p></div>"}
+    </div>
+    <div class="card" style="margin-top:10px;background:#0d1627"><b>Decision Rule</b><div class="muted mini" style="margin-top:6px">Utamakan lead yang masih aktif dan belum sampai Viewing. Fokus V7.2 ialah conversion, bukan menambah spend secara automatik.</div></div>
+  </div>`;
+}
+
 function render(){
   const propertyOptions=d.properties.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.location)}</option>`).join("");
   const currentCp=document.getElementById("cp")?.value;
@@ -1526,7 +1571,7 @@ function render(){
   if(currentP&&!document.getElementById("ch").value)document.getElementById("ch").value=currentP.name||"";
   props.innerHTML=d.properties.map(p=>`<div style="padding:13px;border-bottom:1px solid #2a3955"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1"><b>${esc(p.name)}</b> · ${esc(p.location)} · RM ${Number(p.price||0).toLocaleString("en-MY")}<br><span class="muted">${p.bedrooms||"-"} bed · ${p.bathrooms||"-"} bath · ${esc(p.built_up||"-")} · ${esc(p.tenure||"-")}</span></div><div class="row"><button class="btn" onclick="editProperty('${esc(p.id)}')">✏️ Edit</button><button class="btn" style="border-color:#8b4250" onclick="deleteProperty('${esc(p.id)}')">🗑️ Delete</button></div></div></div>`).join("")||"<p class='muted'>Tiada property.</p>";
   medias.innerHTML=d.media.length?d.media.map(m=>`<div style="padding:10px;border-bottom:1px solid #2a3955">${esc(m.original_name||m.name||"Media")} <span class="tag">${esc(m.tag||"")}</span></div>`).join(""):"<p class='muted'>Tiada media.</p>";
-  renderSalesIntelligence();renderSalesCRM();renderExecutiveDashboard();renderSpendLedger();renderSalesPerformanceIntelligence();renderMarketingSpendIntelligence();renderBudgetScalingIntelligence();renderCreativeFunnelIntelligence();renderCampaignCreativeProfitability();renderBudgetAllocationScaling();renderScalingScenarioSimulator();renderForecastConfidenceGuardrails();renderKPICommandCenter();renderManagementActionCenter();renderExecutiveReportCenter();renderReportingIntelligence();renderMarketingPL();
+  renderSalesIntelligence();renderSalesCRM();renderExecutiveDashboard();renderSpendLedger();renderSalesPerformanceIntelligence();renderMarketingSpendIntelligence();renderBudgetScalingIntelligence();renderCreativeFunnelIntelligence();renderCampaignCreativeProfitability();renderBudgetAllocationScaling();renderScalingScenarioSimulator();renderForecastConfidenceGuardrails();renderKPICommandCenter();renderManagementActionCenter();renderLeadConversionIntelligence();renderExecutiveReportCenter();renderReportingIntelligence();renderMarketingPL();
   renderCreativeLibrary();
 }
 
