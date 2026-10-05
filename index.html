@@ -5,9 +5,10 @@
 .forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.forecast-box{background:#0f1829;border:1px solid var(--l);border-radius:12px;padding:12px}.forecast-box b{display:block;font-size:24px;margin-top:5px}.forecast-settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.forecast-settings input{width:100%;padding:9px;background:#0a1322;border:1px solid var(--l);border-radius:9px;color:#fff}.forecast-label{font-size:11px;color:var(--m);display:block;margin-bottom:4px}.target-track{height:8px;background:#0a1322;border-radius:99px;overflow:hidden;margin-top:8px}.target-fill{height:100%;background:var(--a);border-radius:99px}@media(max-width:900px){.forecast-grid{grid-template-columns:repeat(2,1fr)}.forecast-settings{grid-template-columns:1fr 1fr}}@media(max-width:650px){.forecast-grid,.forecast-settings{grid-template-columns:1fr}}
 </style></head><body>
 <div class="app"><aside class="side"><div class="brand">PROPERTY <span>SCE</span> MASTER</div><nav id="nav"><button class="active" data-p="dashboard">⌂ Dashboard</button><button data-p="spend">💰 Spend Ledger</button><button data-p="pl">📊 Marketing P&amp;L</button><button data-p="properties">▣ Properties</button><button data-p="media">▧ Media</button><button data-p="leads">♙ Leads CRM</button><button data-p="ai">✦ AI Engine</button><button data-p="creative">◈ Creative</button><button data-p="campaigns">◉ Campaigns</button><button data-p="settings">⚙ Settings</button></nav></aside>
-<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V7.0</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
+<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V7.1</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
 <section id="dashboard" class="page active"><div class="hero"><h2>Property Marketing Operating System</h2><p class="muted">Satu sistem untuk property facts, AI ads, creative, leads, campaign dan sales pipeline & sales management.</p></div><div id="executiveDashboard" style="margin-top:13px"></div><div id="salesPerformanceIntelligence"></div><div id="marketingSpendIntelligence"></div><div id="budgetScalingIntelligence"></div><div id="creativeFunnelIntelligence" style="margin-top:13px"></div><div id="campaignCreativeProfitability" style="margin-top:13px"></div><div id="budgetAllocationScaling" style="margin-top:13px"></div><div id="scalingScenarioSimulator" style="margin-top:13px"></div><div id="forecastConfidenceGuardrails"></div>
 <div id="kpiCommandCenter" style="margin-top:13px"></div>
+<div id="managementActionCenter" style="margin-top:13px"></div>
 <div id="executiveReportCenter" style="margin-top:13px"></div>
 <div id="reportingIntelligence"></div><div id="marketingPLDashboard"></div><div id="monthlySalesReport"></div><div id="salesForecast"></div></section>
 <section id="spend" class="page"><div class="between"><div><h2>Marketing Spend Ledger <span class="tag">V6.2</span></h2><p class="muted">Rekod actual Meta/TikTok spend mengikut tarikh dan campaign. Jumlah ledger menjadi sumber kiraan Actual Spend.</p></div><button class="btn primary" onclick="addSpendEntry()">＋ Add Spend</button></div><div class="card" style="margin-top:12px"><div class="form"><div class="field"><label>Campaign</label><select id="spendCampaign"></select></div><div class="field"><label>Tarikh</label><input id="spendDate" type="date"></div><div class="field"><label>Platform</label><select id="spendPlatform"><option>Meta</option><option>TikTok</option><option>Other</option></select></div><div class="field"><label>Amount (RM)</label><input id="spendAmount" type="number" min="0" step="0.01" placeholder="Contoh: 40"></div><div class="field" style="grid-column:1/-1"><label>Nota</label><input id="spendNote" placeholder="Contoh: Meta Ads 4 Okt"></div></div><div class="row" style="margin-top:11px"><button class="btn primary" onclick="addSpendEntry()">Simpan Spend</button><button class="btn" onclick="exportSpendLedgerCSV()">⬇️ Export Spend CSV</button></div></div><div class="grid" style="margin-top:12px"><div class="card stat">Total Spend<b id="spendLedgerTotal">RM 0</b><span class="mini muted">Semua campaign</span></div><div class="card stat">Entries<b id="spendLedgerCount">0</b><span class="mini muted">Rekod spend</span></div></div><div class="card" style="margin-top:12px"><div id="spendLedgerList"></div></div></section>
@@ -871,7 +872,7 @@ function renderKPICommandCenter(){
   el.innerHTML=`<div class="card exec-section">
     <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
       <div>
-        <h2>🎯 Management Command Center · V7.0</h2>
+        <h2>🎯 Management Command Center · V7.1</h2>
         <p class="muted mini">Satu paparan keputusan untuk Marketing → Leads → Campaign → Creative → Sales → Commission.</p>
       </div>
       <span class="tag">${healthEmoji} ${healthState}</span>
@@ -1458,6 +1459,60 @@ function renderCreativeFunnelIntelligence(){
   el.innerHTML=`<div class="card"><h2>🎨 Creative & Funnel Intelligence <span class="tag">V6.5</span></h2><p class="muted">Nilai creative berdasarkan attribution sebenar: Lead → Viewing → Booking → Closed Won. Actual spend kekal dikira di peringkat campaign, jadi sistem tidak mereka-reka ROAS untuk setiap creative.</p><div class="grid" style="margin-top:10px"><div class="card stat">Attributed Leads<b>${attributed}</b><span class="mini muted">Lead yang mempunyai creative</span></div><div class="card stat">Closed Won<b>${totalWon}</b><span class="mini muted">Daripada semua lead</span></div><div class="card stat">Attributed Sales<b>${money(totalSales)}</b><span class="mini muted">Sales daripada Closed Won</span></div><div class="card stat">Attribution Complete<b>${complete}</b><span class="mini muted">Closed Won + creative</span></div></div><div class="grid exec-section"><div class="card"><h3>🏆 Top Creative</h3><p class="muted mini">Ranking berdasarkan Sales Value, kemudian Closed Won dan leads.</p>${rowsHtml}</div><div class="card"><h3>🔽 Funnel Health</h3><p class="muted mini">Jumlah lead pada setiap stage CRM.</p>${funnelHtml}</div></div><div class="card" style="margin-top:10px;background:#0d1627"><b>🧠 Decision Rule</b><div class="muted mini" style="margin-top:6px">🟢 SCALE = Closed Won + sample mencukupi · 🟢 SCALE CAREFULLY = Closed Won tetapi sample kecil · 🟡 OPTIMISE = ≥5 leads tanpa Closed Won · 🔵 MAINTAIN = ada lead tetapi data kecil · ⚪ NO DATA = tiada lead.</div></div></div>`;
 }
 
+function renderManagementActionCenter(){
+  const el=document.getElementById("managementActionCenter"); if(!el)return;
+  const leads=Array.isArray(d.leads)?d.leads:[];
+  const spendRows=typeof marketingSpendRows==="function"?marketingSpendRows():[];
+  const salesRows=typeof getReportRows==="function"?getReportRows():[];
+  const health=typeof salesAttributionHealth==="function"?salesAttributionHealth():{complete:0,pending:0,total:0};
+  const spend=spendRows.reduce((n,x)=>n+Number(x.spend||0),0);
+  const sales=salesRows.reduce((n,x)=>n+Number(x.sale||0),0);
+  const commission=salesRows.reduce((n,x)=>n+Number(x.commission||0),0);
+  const closed=salesRows.length;
+  const roas=spend?sales/spend:0;
+  const viewing=leads.filter(x=>String(x.status||x.stage||"").toLowerCase()==="viewing").length;
+  const booking=leads.filter(x=>String(x.status||x.stage||"").toLowerCase()==="booking").length;
+  const salesTarget=Number(d.salesTarget||d.settings?.sales_target||1000000);
+  const commissionTarget=Number(d.commissionTarget||d.settings?.commission_target||30000);
+  const money=moneyRM0;
+  const actions=[];
+  const add=(priority,title,body,button,page)=>actions.push({priority,title,body,button,page});
+
+  if(health.pending>0) add("HIGH","Lengkapkan attribution Closed Won",`${health.pending} transaksi masih belum lengkap attribution.`,"Buka Sales","leads");
+  if(leads.length>=10 && viewing===0) add("HIGH","Tukar lead kepada Viewing",`${leads.length} lead tersedia tetapi Viewing masih 0. Fokus follow-up dan conversion ke viewing sebelum tambah banyak spend.`,"Buka Lead CRM","leads");
+  if(viewing>0 && booking===0) add("MEDIUM","Tolak Viewing kepada Booking",`${viewing} viewing direkodkan tetapi Booking masih 0. Susun follow-up selepas viewing.`,"Buka Lead CRM","leads");
+  if(spend>0 && closed===0) add("HIGH","Review campaign sebelum scaling",`Marketing Spend ${money(spend)} sudah direkod tetapi belum ada Closed Won.`,"Buka Campaign","campaigns");
+  if(closed>0 && spend>0 && roas>=5) add("MEDIUM","Scaling terkawal",`ROAS semasa ${roas.toFixed(2)}x. Scaling hanya secara berperingkat sambil kumpul sample baharu.`,"Buka Campaign","campaigns");
+  const salesGap=Math.max(0,salesTarget-sales);
+  const commissionGap=Math.max(0,commissionTarget-commission);
+  if(salesGap>0) add("MEDIUM","Kejar Sales Target",`Baki sales target: ${money(salesGap)}.`,"Lihat Dashboard","dashboard");
+  if(commissionGap>0) add("MEDIUM","Kejar Commission Target",`Baki commission target: ${money(commissionGap)}.`,"Lihat Dashboard","dashboard");
+  if(!actions.length) add("LOW","Tiada tindakan kritikal","Data semasa tidak menghasilkan alert tindakan tambahan.","Lihat Dashboard","dashboard");
+
+  const rank={HIGH:0,MEDIUM:1,LOW:2};
+  actions.sort((a,b)=>rank[a.priority]-rank[b.priority]);
+  const badge=p=>p==="HIGH"?"🔴 HIGH":p==="MEDIUM"?"🟡 MEDIUM":"🟢 LOW";
+  el.innerHTML=`<div class="card exec-section">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div><h2>⚡ Management Action Center · V7.1</h2><p class="muted mini">Daripada KPI kepada tindakan: susun keutamaan kerja berdasarkan data semasa.</p></div>
+      <span class="tag">${actions.length} action</span>
+    </div>
+    <div class="exec-list" style="margin-top:10px">
+      ${actions.map((a,i)=>`<div class="card" style="background:#0d1627;margin-top:${i?8:0}px">
+        <div class="row" style="justify-content:space-between;align-items:center;gap:8px"><b>${i+1}. ${esc(a.title)}</b><span class="tag">${badge(a.priority)}</span></div>
+        <p class="muted mini" style="margin:7px 0 10px">${esc(a.body)}</p>
+        <button class="btn" onclick="openPage('${a.page}')">${esc(a.button)}</button>
+      </div>`).join("")}
+    </div>
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>📊 Conversion Snapshot</h3>
+      <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+        <span class="tag">Leads ${leads.length}</span><span class="tag">Viewing ${viewing}</span><span class="tag">Booking ${booking}</span><span class="tag">Closed Won ${closed}</span><span class="tag">Sales ${money(sales)}</span><span class="tag">Commission ${money(commission)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
 function render(){
   const propertyOptions=d.properties.map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.location)}</option>`).join("");
   const currentCp=document.getElementById("cp")?.value;
@@ -1471,7 +1526,7 @@ function render(){
   if(currentP&&!document.getElementById("ch").value)document.getElementById("ch").value=currentP.name||"";
   props.innerHTML=d.properties.map(p=>`<div style="padding:13px;border-bottom:1px solid #2a3955"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap"><div style="min-width:0;flex:1"><b>${esc(p.name)}</b> · ${esc(p.location)} · RM ${Number(p.price||0).toLocaleString("en-MY")}<br><span class="muted">${p.bedrooms||"-"} bed · ${p.bathrooms||"-"} bath · ${esc(p.built_up||"-")} · ${esc(p.tenure||"-")}</span></div><div class="row"><button class="btn" onclick="editProperty('${esc(p.id)}')">✏️ Edit</button><button class="btn" style="border-color:#8b4250" onclick="deleteProperty('${esc(p.id)}')">🗑️ Delete</button></div></div></div>`).join("")||"<p class='muted'>Tiada property.</p>";
   medias.innerHTML=d.media.length?d.media.map(m=>`<div style="padding:10px;border-bottom:1px solid #2a3955">${esc(m.original_name||m.name||"Media")} <span class="tag">${esc(m.tag||"")}</span></div>`).join(""):"<p class='muted'>Tiada media.</p>";
-  renderSalesIntelligence();renderSalesCRM();renderExecutiveDashboard();renderSpendLedger();renderSalesPerformanceIntelligence();renderMarketingSpendIntelligence();renderBudgetScalingIntelligence();renderCreativeFunnelIntelligence();renderCampaignCreativeProfitability();renderBudgetAllocationScaling();renderScalingScenarioSimulator();renderForecastConfidenceGuardrails();renderKPICommandCenter();renderExecutiveReportCenter();renderReportingIntelligence();renderMarketingPL();
+  renderSalesIntelligence();renderSalesCRM();renderExecutiveDashboard();renderSpendLedger();renderSalesPerformanceIntelligence();renderMarketingSpendIntelligence();renderBudgetScalingIntelligence();renderCreativeFunnelIntelligence();renderCampaignCreativeProfitability();renderBudgetAllocationScaling();renderScalingScenarioSimulator();renderForecastConfidenceGuardrails();renderKPICommandCenter();renderManagementActionCenter();renderExecutiveReportCenter();renderReportingIntelligence();renderMarketingPL();
   renderCreativeLibrary();
 }
 
