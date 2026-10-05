@@ -82,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.0.1",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db)});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.0.1",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db),tiktok_webhook:Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -323,14 +323,14 @@ app.get("/api/integrations/status",auth,async(req,res)=>{
   let dbOk=Boolean(pool);
   res.json({
     ok:true,
-    version:"V9.0",
+    version:"V9.1",
     workspace_id:String(req.user.workspace_id),
     database:dbOk,
     normalizedLeadWebhook:workspaceOk&&secretOk&&dbOk,
     meta:{configured:workspaceOk&&secretOk&&dbOk&&Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN),mode:"meta_lead_ads_webhook"},
-    tiktok:{configured:workspaceOk&&secretOk&&dbOk,mode:"webhook_bridge_ready"},
+    tiktok:{configured:workspaceOk&&secretOk&&dbOk&&Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET),mode:"tiktok_webhook"},
     endpoint:workspaceOk&&secretOk?"/api/integrations/leads/{meta|tiktok}":null,
-    requirements:["LEAD_WEBHOOK_SECRET","LEAD_WEBHOOK_WORKSPACE_ID","DATABASE_URL","META_VERIFY_TOKEN","META_APP_SECRET","META_PAGE_ACCESS_TOKEN"]
+    requirements:["LEAD_WEBHOOK_SECRET","LEAD_WEBHOOK_WORKSPACE_ID","DATABASE_URL","META_VERIFY_TOKEN","META_APP_SECRET","META_PAGE_ACCESS_TOKEN","TIKTOK_CLIENT_KEY","TIKTOK_CLIENT_SECRET"]
   });
 });
 
@@ -380,6 +380,9 @@ const META_VERIFY_TOKEN=String(process.env.META_VERIFY_TOKEN||"");
 const META_APP_SECRET=String(process.env.META_APP_SECRET||"");
 const META_PAGE_ACCESS_TOKEN=String(process.env.META_PAGE_ACCESS_TOKEN||"");
 const META_GRAPH_VERSION=String(process.env.META_GRAPH_VERSION||"v24.0");
+const TIKTOK_CLIENT_KEY=String(process.env.TIKTOK_CLIENT_KEY||"");
+const TIKTOK_CLIENT_SECRET=String(process.env.TIKTOK_CLIENT_SECRET||"");
+const TIKTOK_SIGNATURE_MAX_AGE_SECONDS=Math.max(60,Number(process.env.TIKTOK_SIGNATURE_MAX_AGE_SECONDS||300));
 
 function metaSignatureValid(req){
   if(!META_APP_SECRET)return false;
@@ -415,6 +418,55 @@ app.get("/webhooks/meta",async(req,res)=>{
   const challenge=String(req.query["hub.challenge"]||"");
   if(mode==="subscribe"&&META_VERIFY_TOKEN&&token===META_VERIFY_TOKEN)return res.status(200).send(challenge);
   return res.sendStatus(403);
+});
+
+function tiktokSignatureValid(req){
+  if(!TIKTOK_CLIENT_SECRET)return false;
+  const header=String(req.headers["tiktok-signature"]||"");
+  const parts={};
+  for(const item of header.split(",")){const [k,...rest]=item.trim().split("=");if(k&&rest.length)parts[k]=rest.join("=");}
+  const timestamp=String(parts.t||"").trim(),signature=String(parts.s||"").trim();
+  if(!/^\\d+$/.test(timestamp)||!/^[a-f0-9]{64}$/i.test(signature))return false;
+  const age=Math.abs(Math.floor(Date.now()/1000)-Number(timestamp));
+  if(age>TIKTOK_SIGNATURE_MAX_AGE_SECONDS)return false;
+  const raw=Buffer.isBuffer(req.rawBody)?req.rawBody:Buffer.from(JSON.stringify(req.body||{}));
+  const expected=crypto.createHmac("sha256",TIKTOK_CLIENT_SECRET).update(timestamp+"."+raw.toString("utf8")).digest("hex");
+  const a=Buffer.from(signature.toLowerCase()),b=Buffer.from(expected);
+  return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
+
+function parseTikTokContent(value){
+  if(value&&typeof value==="object")return value;
+  if(typeof value==="string"){try{const parsed=JSON.parse(value);return parsed&&typeof parsed==="object"?parsed:{};}catch{return {};}}
+  return {};
+}
+
+function extractTikTokLead(body){
+  const root=body&&typeof body==="object"?body:{};
+  const content=parseTikTokContent(root.content);
+  const data=content.data&&typeof content.data==="object"?content.data:{};
+  const lead=content.lead&&typeof content.lead==="object"?content.lead:{};
+  const fields=content.fields&&typeof content.fields==="object"?content.fields:{};
+  const merged={...content,...data,...lead,...fields};
+  const externalId=String(merged.lead_id||merged.leadId||merged.external_id||merged.externalId||merged.id||"").trim();
+  const name=String(merged.full_name||merged.name||merged.fullName||"").trim();
+  const phone=String(merged.phone_number||merged.phone||merged.whatsapp||"").trim();
+  const email=String(merged.email||"").trim();
+  const event=String(root.event||"").trim();
+  return {externalId,name,phone,email,event,content};
+}
+
+app.post("/webhooks/tiktok",async(req,res)=>{
+  if(!TIKTOK_CLIENT_SECRET||!tiktokSignatureValid(req))return res.sendStatus(403);
+  if(!pool||!LEAD_WEBHOOK_WORKSPACE_ID)return res.status(503).json({error:"TikTok integration belum dikonfigurasi di backend"});
+  const parsed=extractTikTokLead(req.body||{});
+  if(!parsed.externalId)return res.status(200).json({ok:true,ignored:true,reason:"Tiada lead_id/external_id/id dalam event TikTok"});
+  if(!parsed.name&&!parsed.phone&&!parsed.email)return res.status(200).json({ok:true,ignored:true,reason:"Event tidak mengandungi name, phone atau email lead"});
+  try{
+    const normalized=normalizeInboundLead({external_id:parsed.externalId,name:parsed.name,phone:parsed.phone,email:parsed.email,source:"TikTok Lead Ads",funnel_stage:"Cold",notes:`TikTok event=${parsed.event}; client_key=${String(req.body?.client_key||TIKTOK_CLIENT_KEY)}; user_openid=${String(req.body?.user_openid||"")}; create_time=${String(req.body?.create_time||"")}`},"tiktok");
+    const result=await ingestNormalizedLead("tiktok",normalized,{tiktok_webhook:req.body||{},tiktok_content:parsed.content});
+    return res.status(200).json({ok:true,processed:!result.duplicate,duplicate:Boolean(result.duplicate),lead_id:result.lead_id||result.lead?.id,event_id:result.event_id});
+  }catch(err){console.error("TikTok lead processing failed",err);return res.status(err?.status||500).json({error:err?.message||"Gagal menyimpan TikTok lead"});}
 });
 
 app.post("/webhooks/meta",async(req,res)=>{
@@ -492,4 +544,4 @@ app.delete("/api/leads/:id/activities/:activityId",auth,async(req,res)=>{
   return res.json({ok:true,id:req.params.activityId});
 });
 
-migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V9.0.1`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V9.1`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
