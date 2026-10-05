@@ -82,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.1",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db),tiktok_webhook:Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.2",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db),tiktok_webhook:Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
@@ -317,6 +317,22 @@ function normalizeInboundLead(body,provider){
   };
 }
 
+app.get("/api/integrations/diagnostics",auth,async(req,res)=>{
+  const db=Boolean(pool);let dbOk=false;
+  if(pool){try{await pool.query("select 1");dbOk=true;}catch{}}
+  const workspaceId=String(req.user.workspace_id||"");
+  const webhookWorkspace=String(LEAD_WEBHOOK_WORKSPACE_ID||"");
+  const workspaceMatch=Boolean(workspaceId&&webhookWorkspace&&workspaceId===webhookWorkspace);
+  const checks=[
+    {key:"database",label:"PostgreSQL",ok:dbOk},
+    {key:"workspace",label:"Webhook workspace mapping",ok:workspaceMatch},
+    {key:"normalized_secret",label:"Normalized webhook secret",ok:Boolean(LEAD_WEBHOOK_SECRET)},
+    {key:"meta",label:"Meta webhook credentials",ok:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN)},
+    {key:"tiktok",label:"TikTok webhook credentials",ok:Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET)}
+  ];
+  res.json({ok:checks.every(x=>x.ok),version:"V9.2",workspace_id:workspaceId,checks,endpoints:{meta:"/webhooks/meta",tiktok:"/webhooks/tiktok",normalized:"/api/integrations/leads/{meta|tiktok}"},next_steps:[...(!dbOk?["DATABASE_URL / PostgreSQL belum READY"]:[]),...(!workspaceMatch?["LEAD_WEBHOOK_WORKSPACE_ID belum sepadan dengan workspace"]:[]),...(!Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET)?["Masukkan TikTok client key/secret di Render"]:[]),...(!Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN)?["Lengkapkan Meta webhook credentials di Render"]:[])]});
+});
+
 app.get("/api/integrations/status",auth,async(req,res)=>{
   let workspaceOk=Boolean(LEAD_WEBHOOK_WORKSPACE_ID&&LEAD_WEBHOOK_WORKSPACE_ID===String(req.user.workspace_id));
   let secretOk=Boolean(LEAD_WEBHOOK_SECRET);
@@ -544,4 +560,4 @@ app.delete("/api/leads/:id/activities/:activityId",auth,async(req,res)=>{
   return res.json({ok:true,id:req.params.activityId});
 });
 
-migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V9.1`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
+migrateAndSeed().then(()=>ensureLeadIngestionTable()).then(()=>ensureCrmActivityTable()).then(()=>app.listen(PORT,()=>console.log(`PROPERTY SCE MASTER API ${PORT} V9.2`))).catch(err=>{console.error("Startup failed",err);process.exit(1);});
