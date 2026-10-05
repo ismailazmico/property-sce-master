@@ -82,7 +82,7 @@ function auth(req,res,next){
   try{req.user=jwt.verify(h.slice(7),JWT_SECRET);next();}catch{res.status(401).json({error:"Invalid token"});}
 }
 
-app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.0.1",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db),tiktok_webhook:Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
+app.get("/health",async(_,res)=>{let db=false;if(pool){try{await pool.query("select 1");db=true;}catch{}}res.json({ok:true,version:"V9.1",db,r2:r2Ready(),lead_integration:Boolean(LEAD_WEBHOOK_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db),meta_webhook:Boolean(META_VERIFY_TOKEN&&META_APP_SECRET&&META_PAGE_ACCESS_TOKEN&&db),tiktok_webhook:Boolean(TIKTOK_CLIENT_KEY&&TIKTOK_CLIENT_SECRET&&LEAD_WEBHOOK_WORKSPACE_ID&&db)});});
 
 app.post("/api/auth/login",async(req,res)=>{
   const {email,password}=req.body||{};
