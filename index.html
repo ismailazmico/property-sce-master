@@ -1994,9 +1994,13 @@ function renderExecutionPlannerV85(){
 function renderPipelineCoverageV86(){
   const el=document.getElementById("pipelineCoverageV86");if(!el)return;
   const rows=typeof getReportRows==="function"?getReportRows():[];
-  const sales=rows.reduce((n,r)=>n+Number(r.sale||0),0);
+  const metaRows=Object.values(typeof salesMeta==="object"&&salesMeta?salesMeta:{})
+    .filter(m=>Number(m?.sale_price||0)>0)
+    .map(m=>({sale:Number(m.sale_price||0),commission:Number(m.commission||0)}));
+  const canonicalRows=rows.length?rows:metaRows;
+  const sales=canonicalRows.reduce((n,r)=>n+Number(r.sale||0),0);
   const salesTarget=1000000,salesGap=Math.max(0,salesTarget-sales);
-  const avgSale=rows.length?sales/rows.length:0;
+  const avgSale=canonicalRows.length?sales/canonicalRows.length:0;
   const leads=Array.isArray(d.leads)?d.leads:[],real=leads.filter(l=>leadQualityV73(l)==="REAL");
   const active=real.filter(l=>!["closed_won","closed_lost"].includes(getPipeStage(l)));
   const pipelineValue=active.reduce((n,l)=>{
