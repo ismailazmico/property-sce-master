@@ -384,7 +384,7 @@ async function ingestNormalizedLead(provider,normalized,payload){
   }finally{client.release();}
 }
 
-app.post("/api/integrations/leads/:provider",async(req,res)=>{
+app.get("/api/integrations/events",auth,async(req,res)=>{\n  if(!pool)return res.json({events:[]});\n  const provider=req.query?.provider?String(req.query.provider).toLowerCase():null;\n  const limit=Math.min(50,Math.max(1,Number(req.query?.limit||20)));\n  if(provider&&!["meta","tiktok"].includes(provider))return res.status(400).json({error:"Provider tidak disokong"});\n  const params=[req.user.workspace_id];\n  let where="where workspace_id=$1";\n  if(provider){params.push(provider);where+=" and provider=$2";}\n  params.push(limit);\n  const sql="select e.id,e.provider,e.external_id,e.lead_id,e.created_at,l.name,l.phone,l.email,l.stage,l.source from lead_ingestion_events e left join leads l on l.id=e.lead_id "+where+" order by e.created_at desc limit $"+params.length;\n  const r=await pool.query(sql,params);\n  return res.json({events:r.rows});\n});\n\napp.post("/api/integrations/leads/:provider",async(req,res)=>{
   const provider=String(req.params.provider||"").toLowerCase();
   if(!["meta","tiktok"].includes(provider))return res.status(404).json({error:"Provider tidak disokong"});
   if(!webhookAuthorized(req))return res.status(401).json({error:"Webhook tidak sah atau secret belum dikonfigurasi"});
