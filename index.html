@@ -5,7 +5,7 @@
 .forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}.forecast-box{background:#0f1829;border:1px solid var(--l);border-radius:12px;padding:12px}.forecast-box b{display:block;font-size:24px;margin-top:5px}.forecast-settings{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.forecast-settings input{width:100%;padding:9px;background:#0a1322;border:1px solid var(--l);border-radius:9px;color:#fff}.forecast-label{font-size:11px;color:var(--m);display:block;margin-bottom:4px}.target-track{height:8px;background:#0a1322;border-radius:99px;overflow:hidden;margin-top:8px}.target-fill{height:100%;background:var(--a);border-radius:99px}@media(max-width:900px){.forecast-grid{grid-template-columns:repeat(2,1fr)}.forecast-settings{grid-template-columns:1fr 1fr}}@media(max-width:650px){.forecast-grid,.forecast-settings{grid-template-columns:1fr}}
 </style></head><body>
 <div class="app"><aside class="side"><div class="brand">PROPERTY <span>SCE</span> MASTER</div><nav id="nav"><button class="active" data-p="dashboard">⌂ Dashboard</button><button data-p="spend">💰 Spend Ledger</button><button data-p="pl">📊 Marketing P&amp;L</button><button data-p="properties">▣ Properties</button><button data-p="media">▧ Media</button><button data-p="leads">♙ Leads CRM</button><button data-p="ai">✦ AI Engine</button><button data-p="creative">◈ Creative</button><button data-p="campaigns">◉ Campaigns</button><button data-p="settings">⚙ Settings</button></nav></aside>
-<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V6.9</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
+<main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">PROPERTY SCE MASTER V7.0</div></div><div class="row"><span class="tag">ADMIN</span><button class="btn primary" onclick="openPage('properties')">＋ Property</button></div></header>
 <section id="dashboard" class="page active"><div class="hero"><h2>Property Marketing Operating System</h2><p class="muted">Satu sistem untuk property facts, AI ads, creative, leads, campaign dan sales pipeline & sales management.</p></div><div id="executiveDashboard" style="margin-top:13px"></div><div id="salesPerformanceIntelligence"></div><div id="marketingSpendIntelligence"></div><div id="budgetScalingIntelligence"></div><div id="creativeFunnelIntelligence" style="margin-top:13px"></div><div id="campaignCreativeProfitability" style="margin-top:13px"></div><div id="budgetAllocationScaling" style="margin-top:13px"></div><div id="scalingScenarioSimulator" style="margin-top:13px"></div><div id="forecastConfidenceGuardrails"></div>
 <div id="kpiCommandCenter" style="margin-top:13px"></div>
 <div id="executiveReportCenter" style="margin-top:13px"></div>
@@ -786,70 +786,152 @@ function reportPeriodRows(rows,mode,startValue,endValue){
 
 function renderKPICommandCenter(){
   const el=document.getElementById("kpiCommandCenter"); if(!el)return;
-  const rows=getReportRows();
-  const sales=rows.reduce((n,x)=>n+x.sale,0), comm=rows.reduce((n,x)=>n+x.commission,0);
-  const spendRows=(typeof marketingSpendRows==="function"?marketingSpendRows():[]);
-  const spend=spendRows.reduce((n,x)=>n+Number(x.spend||0),0);
+
   const leads=Array.isArray(d.leads)?d.leads:[];
-  const closed=rows.length;
+  const spendRows=typeof marketingSpendRows==="function"?marketingSpendRows():[];
+  const salesRows=typeof getReportRows==="function"?getReportRows():[];
+  const health=typeof salesAttributionHealth==="function"?salesAttributionHealth():{complete:0,pending:0,total:0};
+
+  const sales=salesRows.reduce((n,x)=>n+Number(x.sale||0),0);
+  const commission=salesRows.reduce((n,x)=>n+Number(x.commission||0),0);
+  const spend=spendRows.reduce((n,x)=>n+Number(x.spend||0),0);
+  const closed=salesRows.length;
+  const netCommission=commission-spend;
   const cpl=leads.length?spend/leads.length:0;
   const costClose=closed?spend/closed:0;
-  const roas=spend>0?sales/spend:0;
-  const commissionReturn=spend>0?comm/spend:0;
-  const salesTarget=Number(d.salesTarget||d.settings?.sales_target||1000000);
-  const commTarget=Number(d.commissionTarget||d.settings?.commission_target||30000);
-  const salesPct=salesTarget>0?(sales/salesTarget)*100:0;
-  const commPct=commTarget>0?(comm/commTarget)*100:0;
-  const health = closed>0 && spend>0 && roas>=5 ? ["🟢","HEALTHY","Ada closing + ROAS ≥ 5x"]
-    : closed>0 ? ["🟡","WATCH","Ada closing tetapi data spend/ROAS perlu dipantau"]
-    : leads.length>=10 ? ["🟡","BUILD","Ada data lead tetapi belum Closed Won"]
-    : leads.length>0 ? ["🔵","EARLY","Data masih awal"]
-    : ["⚪","NO DATA","Belum ada lead"];
+  const roas=spend?sales/spend:0;
+  const commissionReturn=spend?commission/spend:0;
 
-  const group=(key)=>Object.values(rows.reduce((m,x)=>{
+  const salesTarget=Number(d.salesTarget||d.settings?.sales_target||1000000);
+  const commissionTarget=Number(d.commissionTarget||d.settings?.commission_target||30000);
+  const salesPct=salesTarget?sales/salesTarget*100:0;
+  const commissionPct=commissionTarget?commission/commissionTarget*100:0;
+  const salesGap=Math.max(0,salesTarget-sales);
+  const commissionGap=Math.max(0,commissionTarget-commission);
+
+  const group=(key)=>Object.values(salesRows.reduce((m,x)=>{
     const k=x[key]||"—";
     m[k]??={name:k,count:0,sales:0,commission:0};
-    m[k].count++; m[k].sales+=x.sale; m[k].commission+=x.commission;
+    m[k].count++;
+    m[k].sales+=Number(x.sale||0);
+    m[k].commission+=Number(x.commission||0);
     return m;
   },{})).sort((a,b)=>b.sales-a.sales);
 
-  const topCampaign=group("campaign")[0], topProperty=group("property")[0], topCreative=group("creative")[0];
+  const topCampaign=group("campaign")[0];
+  const topProperty=group("property")[0];
+  const topCreative=group("creative")[0];
+
+  const attributionComplete=health.total>0 && health.pending===0;
+  let healthState,healthEmoji,healthReason;
+  if(closed>0 && spend>0 && roas>=5 && attributionComplete){
+    healthState="HEALTHY"; healthEmoji="🟢"; healthReason="Sales, spend, ROAS dan attribution lengkap.";
+  }else if(closed>0 && spend>0){
+    healthState="WATCH"; healthEmoji="🟡"; healthReason="Ada closing; pantau ROAS, sample size dan attribution.";
+  }else if(leads.length>=10){
+    healthState="BUILD"; healthEmoji="🟡"; healthReason="Lead sudah terkumpul tetapi Closed Won belum mencukupi.";
+  }else if(leads.length>0){
+    healthState="EARLY"; healthEmoji="🔵"; healthReason="Data masih awal; elakkan scaling agresif.";
+  }else{
+    healthState="NO DATA"; healthEmoji="⚪"; healthReason="Belum ada data lead.";
+  }
+
+  const action=closed>0 && spend>0 && roas>=5
+    ? "🟢 SCALE CAREFULLY — naikkan budget secara berperingkat dan pantau sample baharu."
+    : closed>0 && spend>0
+    ? "🔵 MAINTAIN / REVIEW — closing ada, tetapi teruskan pengumpulan data."
+    : leads.length>=10
+    ? "🟡 OPTIMISE — fokus lead quality dan conversion sebelum tambah budget."
+    : "⚪ BUILD DATA — lengkapkan attribution dan kumpul data sebelum scaling.";
+
   const money=moneyRM0;
-  const pct=x=>`${Math.min(999,Math.max(0,x)).toFixed(1)}%`;
-  const targetBar=(label,actual,target,percent)=>`<div style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>${label}</b><span>${money(actual)} / ${money(target)}</span></div><div style="height:8px;background:#07101d;border-radius:8px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${Math.min(100,Math.max(0,percent))}%;background:#55d6c2"></div></div><div class="muted mini" style="margin-top:4px">${pct(percent)} achieved</div></div>`;
-  const winner=(title,x,icon)=>x?`<div class="card" style="background:#0d1627"><h3>${icon} ${title}</h3><b>${esc(x.name)}</b><div class="muted mini">${x.count} closed won · Sales ${money(x.sales)} · Commission ${money(x.commission)}</div></div>`:`<div class="card" style="background:#0d1627"><h3>${icon} ${title}</h3><p class="muted mini">Belum ada data.</p></div>`;
+  const pct=x=>`${Math.max(0,x).toFixed(1)}%`;
+  const bar=(label,actual,target,percent)=>{
+    const width=Math.min(100,Math.max(0,percent));
+    return `<div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;gap:8px"><b>${label}</b><span>${money(actual)} / ${money(target)}</span></div>
+      <div style="height:8px;background:#07101d;border-radius:8px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${width}%;background:#55d6c2"></div></div>
+      <div class="muted mini" style="margin-top:4px">${pct(percent)} achieved · Baki ${money(Math.max(0,target-actual))}</div>
+    </div>`;
+  };
+  const winner=(title,x,icon)=>{
+    if(!x)return `<div class="card" style="background:#0d1627"><h3>${icon} ${title}</h3><p class="muted mini">Belum ada data.</p></div>`;
+    return `<div class="card" style="background:#0d1627"><h3>${icon} ${title}</h3><b>${esc(x.name)}</b><div class="muted mini">${x.count} closed won · Sales ${money(x.sales)} · Commission ${money(x.commission)}</div></div>`;
+  };
+
+  const topSpend=spendRows.slice().sort((a,b)=>b.spend-a.spend)[0];
+  const alerts=[];
+  if(health.pending>0) alerts.push(`⚠️ ${health.pending} Closed Won masih pending attribution.`);
+  if(spend>0 && closed===0) alerts.push("⚠️ Marketing spend sudah ada tetapi belum ada Closed Won.");
+  if(spend>0 && roas>0 && leads.length<10) alerts.push("🛡️ ROAS tersedia tetapi sample lead masih LOW DATA.");
+  if(salesGap>0) alerts.push(`🎯 Sales masih memerlukan ${money(salesGap)} untuk capai target.`);
+  if(commissionGap>0) alerts.push(`💼 Commission masih memerlukan ${money(commissionGap)} untuk capai target.`);
+  if(!alerts.length) alerts.push("✅ Tiada alert kritikal berdasarkan data semasa.");
 
   el.innerHTML=`<div class="card exec-section">
-    <h2>🎯 Management KPI Command Center · V6.1</h2>
-    <p class="muted mini">Paparan pengurusan untuk Sales, Commission, Marketing Efficiency dan Business Health. Actual spend hanya digunakan jika data spend tersedia.</p>
-    <div class="card" style="background:#0d1627;margin-top:10px">
-      <h3>${health[0]} Business Health · ${health[1]}</h3>
-      <p class="muted mini">${health[2]}</p>
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div>
+        <h2>🎯 Management Command Center · V7.0</h2>
+        <p class="muted mini">Satu paparan keputusan untuk Marketing → Leads → Campaign → Creative → Sales → Commission.</p>
+      </div>
+      <span class="tag">${healthEmoji} ${healthState}</span>
     </div>
+
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>${healthEmoji} Business Health · ${healthState}</h3>
+      <p class="muted mini">${healthReason}</p>
+      <div class="mini muted" style="margin-top:5px">Attribution: ${health.complete}/${health.total} complete · Spend entries: ${spendRows.filter(x=>x.spend>0).length}</div>
+    </div>
+
     <div class="grid" style="margin-top:10px">
-      <div class="card stat">Sales Value<b>${money(sales)}</b><span class="mini muted">Closed Won</span></div>
-      <div class="card stat">Commission<b>${money(comm)}</b><span class="mini muted">Actual commission</span></div>
+      <div class="card stat">Sales Value<b>${money(sales)}</b><span class="mini muted">${closed} Closed Won</span></div>
+      <div class="card stat">Commission<b>${money(commission)}</b><span class="mini muted">Actual commission</span></div>
+      <div class="card stat">Net Commission<b>${money(netCommission)}</b><span class="mini muted">Commission − Marketing Spend</span></div>
+      <div class="card stat">Marketing Spend<b>${money(spend)}</b><span class="mini muted">Spend Ledger</span></div>
       <div class="card stat">Leads<b>${leads.length}</b><span class="mini muted">${closed} Closed Won</span></div>
-      <div class="card stat">Actual Spend<b>${money(spend)}</b><span class="mini muted">Marketing spend</span></div>
       <div class="card stat">CPL<b>${money(cpl)}</b><span class="mini muted">Spend ÷ Leads</span></div>
       <div class="card stat">Cost / Close<b>${money(costClose)}</b><span class="mini muted">Spend ÷ Closed Won</span></div>
-      <div class="card stat">ROAS<b>${spend>0?roas.toFixed(2)+"x":"—"}</b><span class="mini muted">Sales ÷ Spend</span></div>
-      <div class="card stat">Commission Return<b>${spend>0?commissionReturn.toFixed(2)+"x":"—"}</b><span class="mini muted">Commission ÷ Spend</span></div>
+      <div class="card stat">ROAS<b>${spend?roas.toFixed(2)+"x":"—"}</b><span class="mini muted">Sales ÷ Spend</span></div>
+      <div class="card stat">Commission Return<b>${spend?commissionReturn.toFixed(2)+"x":"—"}</b><span class="mini muted">Commission ÷ Spend</span></div>
+      <div class="card stat">Top Spend Campaign<b>${topSpend?esc(topSpend.c.name):"—"}</b><span class="mini muted">${topSpend?money(topSpend.spend):"No spend"}</span></div>
     </div>
+
     <div class="card" style="background:#0d1627;margin-top:10px">
-      <h3>🎯 Target Progress</h3>
-      ${targetBar("Sales Target",sales,salesTarget,salesPct)}
-      ${targetBar("Commission Target",comm,commTarget,commPct)}
+      <h3>🎯 Target Management</h3>
+      ${bar("Sales Target",sales,salesTarget,salesPct)}
+      ${bar("Commission Target",commission,commissionTarget,commissionPct)}
     </div>
+
     <div class="grid" style="margin-top:10px">
       ${winner("Top Property",topProperty,"🏠")}
       ${winner("Top Campaign",topCampaign,"📢")}
       ${winner("Top Creative",topCreative,"🎨")}
     </div>
+
     <div class="card" style="background:#0d1627;margin-top:10px">
-      <h3>📌 Management Action</h3>
-      <p class="muted mini">${closed>0 && spend>0 && roas>=5 ? "Scale carefully: closing sudah berlaku dan ROAS ≥ 5x. Naikkan budget secara berperingkat sambil pantau data tambahan." : closed>0 && spend>0 ? "Maintain / review: closing sudah berlaku tetapi ROAS belum cukup kuat untuk scaling agresif." : leads.length>=10 ? "Fokus tingkatkan conversion lead → viewing → closing sambil kumpul lebih banyak data." : "Fokus kumpul data lead dan attribution sebelum membuat keputusan scaling besar."}</p>
-      <button onclick="exportSalesReportCSV()">⬇️ Export Management Sales CSV</button>
+      <h3>🚦 Management Action</h3>
+      <p class="muted mini">${action}</p>
+    </div>
+
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>🔔 Management Alerts</h3>
+      <div class="exec-list" style="margin-top:6px">${alerts.map(a=>`<div class="exec-row"><div>${esc(a)}</div></div>`).join("")}</div>
+    </div>
+
+    <div class="card" style="background:#0d1627;margin-top:10px">
+      <h3>📌 Current Decision Snapshot</h3>
+      <div class="row" style="margin-top:8px;gap:8px">
+        <span class="tag">Sales ${money(sales)}</span>
+        <span class="tag">Commission ${money(commission)}</span>
+        <span class="tag">Net ${money(netCommission)}</span>
+        <span class="tag">Spend ${money(spend)}</span>
+        <span class="tag">${spend?`ROAS ${roas.toFixed(2)}x`:"ROAS —"}</span>
+        <span class="tag">Closed ${closed}</span>
+      </div>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button onclick="exportSalesReportCSV()">⬇️ Export Management Sales CSV</button>
+        <button onclick="exportMarketingPLCSV()">⬇️ Export Marketing P&L CSV</button>
+      </div>
     </div>
   </div>`;
 }
